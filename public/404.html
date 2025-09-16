@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Weiterleitung…</title>
+    <meta http-equiv="refresh" content="0; url=/" />
+    <script>
+      // Fallback JS-Redirect (für Hosts ohne Meta-Refresh):
+      (function () {
+        // Für reine SPAs reicht es, die Startseite zu laden
+        window.location.replace('/');
+      })();
+    </script>
+    <style>
+      html,body{height:100%}body{display:flex;align-items:center;justify-content:center;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;color:#888}
+    </style>
+  </head>
+  <body>
+    <div>Weiterleitung…</div>
+  </body>
+</html>
