@@ -1,0 +1,62 @@
+# Upload Directory .htaccess Configuration
+
+# Disable directory browsing and content negotiation that may cause unexpected mappings
+Options -Indexes -MultiViews
+
+# Set CORS headers for image access
+Header always set Access-Control-Allow-Origin "*"
+Header always set Access-Control-Allow-Methods "GET, OPTIONS"
+Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+Header always set Cross-Origin-Resource-Policy "cross-origin"
+Header always set X-Content-Type-Options "nosniff"
+
+# Handle preflight OPTIONS requests
+RewriteEngine On
+RewriteCond %{REQUEST_METHOD} OPTIONS
+RewriteRule ^(.*)$ $1 [R=200,L]
+
+# Return 404 for missing image files explicitly (prevents HTML error pages causing ORB)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule \.(jpe?g|png|gif|webp|json)$ - [R=404,L]
+
+# Minimal 404 body to avoid large HTML error pages
+ErrorDocument 404 "Not Found"
+ErrorDocument 403 "Forbidden"
+
+# Set proper MIME types for images
+<IfModule mod_mime.c>
+    AddType image/jpeg .jpg .jpeg
+    AddType image/png .png
+    AddType image/gif .gif
+    AddType image/webp .webp
+    AddType application/json .json
+</IfModule>
+
+# Security: Deny execution of PHP files in upload directory
+<FilesMatch "\.(php|phtml|php3|php4|php5|pl|py|jsp|asp|sh|cgi)$">
+    <RequireAll>
+        Require all denied
+    </RequireAll>
+</FilesMatch>
+
+# Allow access to images and JSON files
+<FilesMatch "\.(jpg|jpeg|png|gif|webp|json)$">
+    <RequireAll>
+        Require all granted
+    </RequireAll>
+</FilesMatch>
+
+# Cache control for images
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/gif "access plus 1 month"
+    ExpiresByType image/webp "access plus 1 month"
+    ExpiresByType application/json "access plus 1 minute"
+</IfModule>
+
+# Compression for JSON files
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE application/json
+</IfModule>
