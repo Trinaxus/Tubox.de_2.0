@@ -21,14 +21,30 @@ interface BlogEditModalProps {
 export const BlogEditModal = ({ post, isOpen, onClose, onSave, categories }: BlogEditModalProps) => {
   const [editedPost, setEditedPost] = useState<BlogPost | null>(null);
   const [newTag, setNewTag] = useState('');
+  
+  // Default values for a new post
+  const defaultPost: BlogPost = {
+    id: '',
+    title: '',
+    content: '',
+    date: new Date().toISOString(),
+    author: 'Admin',
+    tags: [],
+    published: false,
+    year: new Date().getFullYear(),
+    category: 'Allgemein',
+    featured_image: '',
+    slug: ''
+  };
 
   useEffect(() => {
-    if (post) {
-      setEditedPost({ ...post });
-    }
+    setEditedPost(post ? { ...defaultPost, ...post } : null);
   }, [post]);
 
   if (!editedPost) return null;
+  
+  // Ensure tags is always an array
+  const safeTags = Array.isArray(editedPost.tags) ? editedPost.tags : [];
 
   const handleSave = () => {
     if (editedPost) {
@@ -82,10 +98,19 @@ export const BlogEditModal = ({ post, isOpen, onClose, onSave, categories }: Blo
               <Input
                 id="edit-year"
                 type="number"
-                min="2020"
-                max="2030"
+                min="1900"
+                max={new Date().getFullYear() + 1}
                 value={editedPost.year || new Date().getFullYear()}
-                onChange={(e) => setEditedPost({ ...editedPost, year: parseInt(e.target.value) })}
+                onChange={(e) => {
+                  const year = parseInt(e.target.value);
+                  if (!isNaN(year) && year >= 1900 && year <= new Date().getFullYear() + 1) {
+                    setEditedPost({ 
+                      ...editedPost, 
+                      year,
+                      date: new Date(year, 0, 1).toISOString() // Keep date in sync with year
+                    });
+                  }
+                }}
                 className="bg-background/50"
               />
             </div>
@@ -119,8 +144,9 @@ export const BlogEditModal = ({ post, isOpen, onClose, onSave, categories }: Blo
               <Label htmlFor="edit-author">Autor</Label>
               <Input
                 id="edit-author"
-                value={editedPost.author}
+                value={editedPost.author || ''}
                 onChange={(e) => setEditedPost({ ...editedPost, author: e.target.value })}
+                placeholder="Autor eingeben"
                 className="bg-background/50"
               />
             </div>
@@ -148,7 +174,7 @@ export const BlogEditModal = ({ post, isOpen, onClose, onSave, categories }: Blo
           <div className="space-y-2">
             <Label>Tags</Label>
             <div className="flex flex-wrap gap-2 mb-2">
-              {editedPost.tags.map((tag, index) => (
+              {safeTags.map((tag, index) => (
                 <Badge key={index} variant="secondary" className="flex items-center gap-1">
                   {tag}
                   <X
@@ -175,10 +201,12 @@ export const BlogEditModal = ({ post, isOpen, onClose, onSave, categories }: Blo
           <div className="flex items-center space-x-2">
             <Switch
               id="edit-published"
-              checked={editedPost.published}
+              checked={!!editedPost.published}
               onCheckedChange={(checked) => setEditedPost({ ...editedPost, published: checked })}
             />
-            <Label htmlFor="edit-published">Veröffentlicht</Label>
+            <Label htmlFor="edit-published">
+              {editedPost.published ? 'Veröffentlicht' : 'Nicht veröffentlicht'}
+            </Label>
           </div>
 
           <div className="flex justify-end gap-2 pt-4">

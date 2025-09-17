@@ -7,6 +7,7 @@ interface LightboxProps {
   onClose: () => void;
   onNext: () => void;
   onPrev: () => void;
+  onThumbnailClick: (index: number) => void;
   galleryTitle: string;
 }
 
@@ -16,6 +17,7 @@ export const Lightbox = ({
   onClose, 
   onNext, 
   onPrev, 
+  onThumbnailClick,
   galleryTitle 
 }: LightboxProps) => {
   
@@ -122,12 +124,13 @@ export const Lightbox = ({
           {images.map((img, index) => (
             <button
               key={index}
-              onClick={() => {/* Could add direct navigation to specific image */}}
+              onClick={() => onThumbnailClick(index)}
               className={`flex-shrink-0 w-16 h-12 rounded overflow-hidden border-2 transition-all duration-200 ${
                 index === currentIndex 
-                  ? 'border-primary shadow-lg' 
-                  : 'border-white/30 hover:border-white/60'
+                  ? 'border-primary shadow-lg scale-110' 
+                  : 'border-white/30 hover:border-white/60 hover:scale-105'
               }`}
+              aria-label={`Bild ${index + 1} anzeigen`}
             >
               <img
                 src={img}

@@ -337,6 +337,7 @@ const Gallery = () => {
           onClose={closeLightbox}
           onNext={nextImage}
           onPrev={prevImage}
+          onThumbnailClick={setSelectedImageIndex}
           galleryTitle={gallery.galerie}
         />
       )}

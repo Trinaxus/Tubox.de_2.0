@@ -34,6 +34,47 @@ export const verifyGalleryPassword = async (
     return { success: false, message: 'Network error' } as any;
   }
 };
+
+// Scoped category helpers to decouple gallery vs blog categories
+export type CategoryScope = 'gallery' | 'blog';
+
+export const fetchCategoriesScoped = async (scope: CategoryScope): Promise<string[]> => {
+  if (scope === 'gallery') {
+    return fetchCategories();
+  }
+  // Blog scope: store locally; fallback derive from blog posts
+  try {
+    const stored = localStorage.getItem('blog_categories');
+    if (stored) {
+      const data = JSON.parse(stored);
+      return data.categories || [];
+    }
+  } catch {}
+  try {
+    const posts = await fetchBlogPosts();
+    const set = new Set<string>();
+    posts.forEach(p => {
+      const raw = (p.category || '').toString().trim();
+      if (raw) set.add(raw.toUpperCase());
+    });
+    return Array.from(set).sort((a,b)=>a.localeCompare(b));
+  } catch {
+    return [];
+  }
+};
+
+export const updateCategoriesScoped = async (scope: CategoryScope, categories: string[]): Promise<void> => {
+  if (scope === 'gallery') {
+    return updateCategories(categories);
+  }
+  // Blog scope: store in localStorage only
+  const payload = {
+    categories,
+    lastUpdated: new Date().toISOString(),
+    version: '1.0'
+  };
+  localStorage.setItem('blog_categories', JSON.stringify(payload));
+};
 export interface Gallery extends GalleryMetadata {
   id: string;
   title: string;
@@ -538,11 +579,12 @@ export const updateBlogPost = async (slug: string, year: number, postData: Parti
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer your-admin-token'
+        'Authorization': `Bearer ${API_TOKEN}`
       },
       body: JSON.stringify({
-        id: postData.id,
-        ...postData
+        ...postData,
+        id: postData.id || '',
+        year: postData.year || year
       })
     });
     

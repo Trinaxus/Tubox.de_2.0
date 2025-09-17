@@ -138,7 +138,7 @@ try {
             if ($src) {
                 $w = imagesx($src);
                 $h = imagesy($src);
-                $max = 800; // max long edge
+                $max = 600; // max long edge (extra speed)
                 $scale = ($w > $h) ? ($max / max(1,$w)) : ($max / max(1,$h));
                 if ($scale > 1) { $scale = 1; }
                 $nw = max(1, (int)round($w * $scale));
@@ -159,7 +159,7 @@ try {
                 switch ($ext) {
                     case 'jpg':
                     case 'jpeg':
-                        @imagejpeg($dst, $dstPath, 80);
+                        @imagejpeg($dst, $dstPath, 70);
                         break;
                     case 'png':
                         @imagepng($dst, $dstPath, 6);
@@ -169,7 +169,7 @@ try {
                         break;
                     case 'webp':
                         if (function_exists('imagewebp')) {
-                            @imagewebp($dst, $dstPath, 80);
+                            @imagewebp($dst, $dstPath, 70);
                         }
                         break;
                 }

@@ -1,0 +1,42 @@
+# Allow access to images
+<FilesMatch "\.(jpg|jpeg|png|gif|webp)$">
+    Order allow,deny
+    Allow from all
+</FilesMatch>
+
+# Allow access to JSON files for metadata
+<FilesMatch "\.json$">
+    Order allow,deny
+    Allow from all
+</FilesMatch>
+
+# Set proper MIME types
+AddType image/jpeg .jpg .jpeg
+AddType image/png .png
+AddType image/gif .gif
+AddType image/webp .webp
+AddType application/json .json
+
+# Enable caching for images (1 week)
+<FilesMatch "\.(jpg|jpeg|png|gif|webp)$">
+    Header set Cache-Control "max-age=604800, public"
+</FilesMatch>
+
+# Security headers
+Header always set X-Frame-Options "SAMEORIGIN"
+Header always set X-Content-Type-Options "nosniff"
+
+# Disable directory browsing
+Options -Indexes
+
+# Deny access to .htaccess itself
+<Files ".htaccess">
+    Order deny,allow
+    Deny from all
+</Files>
+
+# Prevent access to PHP files (if any accidentally end up here)
+<FilesMatch "\.php$">
+    Order deny,allow
+    Deny from all
+</FilesMatch>

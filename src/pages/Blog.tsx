@@ -68,10 +68,17 @@ const Blog = () => {
     loadBlogPosts();
   }, []);
 
-  // Filter blog posts by category
+  // Filter blog posts by category (case-insensitive comparison)
   const filteredBlogPosts = activeCategory === 'ALLE' 
     ? blogPosts 
-    : blogPosts.filter(post => (post.category || '').toString().trim().toUpperCase() === activeCategory);
+    : blogPosts.filter(post => {
+        const postCategory = (post.category || '').toString().trim().toUpperCase();
+        // Special handling for MUSIC category to match any variation of 'music'
+        if (activeCategory === 'MUSIC') {
+          return postCategory === 'MUSIC' || postCategory.includes('MUSIK');
+        }
+        return postCategory === activeCategory;
+      });
 
   // Sort by normalized date (newest first). Our transform sets date from title/fields.
   const sortedBlogPosts = [...filteredBlogPosts].sort((a, b) => getPostTimestamp(b) - getPostTimestamp(a));
@@ -93,10 +100,10 @@ const Blog = () => {
           {blogCategories.map((category) => (
             <Button
               key={category}
-              variant={activeCategory === category ? 'default' : 'outline'}
+              variant={activeCategory === category ? 'active' : 'ghost'}
               size="sm"
               onClick={() => setActiveCategory(category)}
-              className={`px-4 rounded-xl ${activeCategory === category ? 'bg-primary text-primary-foreground' : ''}`}
+              className="text-sm font-medium transition-all duration-200 rounded-xl"
             >
               {category}
             </Button>

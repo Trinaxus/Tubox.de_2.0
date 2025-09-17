@@ -7,7 +7,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GalleryManager } from './GalleryManager';
 import { BlogManager } from './BlogManager';
 import { FolderManager } from './FolderManager';
-import { CategoryManager } from './CategoryManager';
 
 export const AdminDashboard = () => {
   const { user, logout } = useAuth();
@@ -36,14 +35,10 @@ export const AdminDashboard = () => {
 
       <main className="max-w-7xl mx-auto p-6">
         <Tabs defaultValue="galleries" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="galleries" className="flex items-center gap-2">
               <span className="text-primary">📁</span>
               Galerien
-            </TabsTrigger>
-            <TabsTrigger value="categories" className="flex items-center gap-2">
-              <span className="text-primary">🏷️</span>
-              Kategorien
             </TabsTrigger>
             <TabsTrigger value="blog" className="flex items-center gap-2">
               <span className="text-primary">✏️</span>
@@ -57,10 +52,6 @@ export const AdminDashboard = () => {
 
           <TabsContent value="galleries">
             <GalleryManager />
-          </TabsContent>
-
-          <TabsContent value="categories">
-            <CategoryManager />
           </TabsContent>
 
           <TabsContent value="blog">

@@ -1,0 +1,198 @@
+
+<style>
+    .cardCustom {
+      padding: 24px;
+      border: 1.5px solid transparent;
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 400;
+      border-radius: 16px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .cardCustom:hover {
+      background: rgba(255, 59, 48, 0.3);
+      border: 1.5px solid #ff3b30;
+      box-shadow: 0 0 20px rgb(255, 42, 0);
+    }
+
+    .year-bubble {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background-color: rgba(255, 59, 48, 0.8);
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+      padding: 6px 10px;
+      border-radius: 999px;
+      box-shadow: 0 0 10px rgba(255, 59, 48, 0.6);
+    }
+
+    .specs {
+      font-size: 14px;
+      margin-top: 12px;
+      color: #ffcccc;
+    }
+
+    .text-white {
+      color: white;
+    }
+
+    .text-4xl {
+      font-size: 2.25rem;
+      line-height: 2.5rem;
+    }
+
+    .font-bold {
+      font-weight: 700;
+    }
+
+    .mb-8 {
+      margin-bottom: 2rem;
+    }
+
+    .text-center {
+      text-align: center;
+    }
+
+    .mb-6 {
+      margin-bottom: 1.5rem;
+    }
+
+    .grid {
+      display: grid;
+    }
+
+    .gap-6 {
+      gap: 1.5rem;
+    }
+
+    .grid-cols-1 {
+      grid-template-columns: repeat(1, minmax(0, 1fr));
+    }
+
+    .sm\:grid-cols-2 {
+      @media (min-width: 640px) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    .lg\:grid-cols-3 {
+      @media (min-width: 1024px) {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    .rounded-md {
+      border-radius: 0.375rem;
+    }
+
+    .w-full {
+      width: 100%;
+    }
+
+    .text-xl {
+      font-size: 1.25rem;
+      line-height: 1.75rem;
+    }
+
+    .font-semibold {
+      font-weight: 600;
+    }
+
+    .text-red-400 {
+      color: rgb(248 113 113);
+    }
+
+    .mb-2 {
+      margin-bottom: 0.5rem;
+    }
+
+    .mb-4 {
+      margin-bottom: 1rem;
+    }
+  </style>
+
+  <h1 class="text-4xl font-bold mb-8 text-center text-white">Fotografie ohne Grenzen: Mein Blick durch die Linse</h1>
+  <p class="text-white mb-6">Mein Weg durch die Kamerawelt<br>
+  Jede Kamera, die ich besessen habe, erzählt ein Stück meiner fotografischen Entwicklung. Vom ersten Zoom-Versuch bis zur heutigen High-End-Ausrüstung – jede brachte neue Möglichkeiten, neue Perspektiven und ein bisschen mehr Feingefühl. Hier zeige ich dir die Kameramodelle, die mich auf meinem Weg begleitet haben.</p>
+
+  <!-- Kamera Cards Grid -->
+  <div class="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+    <div class="cardCustom">
+      <div class="year-bubble">1997</div>
+      <img src="https://tubox.de/TUBOX/server/uploads/2000/STAFF/Olympus_Camedia_C-1400XL.jpg" alt="OLYMPUS CAMEDIA C-1400XL" class="mb-4 rounded-md w-full">
+      <h2 class="text-xl font-semibold text-red-400 mb-2">OLYMPUS CAMEDIA C-1400XL</h2>
+      <p>Eine der ersten digitalen Bridgekameras mit hochwertigem Design und fester Wechseloptik.</p>
+      <div class="specs">1.4 MP – ca. 1.499 € (UVP)</div>
+    </div>
+
+    <div class="cardCustom">
+      <div class="year-bubble">2002</div>
+      <img src="https://tubox.de/TUBOX/server/uploads/2000/STAFF/konica_kd200z.jpg" alt="Konica Digital Revio KD-200Z" class="mb-4 rounded-md w-full">
+      <h2 class="text-xl font-semibold text-red-400 mb-2">Konica Digital Revio KD-200Z</h2>
+      <p>Ultrakompakte Reisekamera mit stylischem Design und guter Zoomreichweite.</p>
+      <div class="specs">2.0 MP – ca. 399 € (UVP)</div>
+    </div>
+
+    <div class="cardCustom">
+      <div class="year-bubble">2004</div>
+      <img src="https://tubox.de/TUBOX/server/uploads/2000/STAFF/canon_PowerShot%20S1%20IS.gif" alt="Canon PowerShot S1 IS" class="mb-4 rounded-md w-full">
+      <h2 class="text-xl font-semibold text-red-400 mb-2">Canon PowerShot S1 IS</h2>
+      <p>Meine erste Kamera – sie weckte meine Leidenschaft für Bildgestaltung.</p>
+      <div class="specs">3.2 MP – ca. 599 €</div>
+    </div>
+
+    <div class="cardCustom">
+      <div class="year-bubble">2005</div>
+      <img src="https://tubox.de/TUBOX/server/uploads/2000/STAFF/Sony%20DSC-R1.jpg" class="mb-4 rounded-md w-full">
+      <h2 class="text-xl font-semibold text-red-400 mb-2">Sony DSC-R1</h2>
+      <p>Ein Meilenstein in Sachen Qualität und Handling für mich.</p>
+      <div class="specs">10.3 MP – ca. 999 €</div>
+    </div>
+
+    <div class="cardCustom">
+      <div class="year-bubble">2004</div>
+      <img src="https://tubox.de/TUBOX/server/uploads/2000/STAFF/Nikon%20Coolpix%208700.jpg" alt="Nikon Coolpix 8700" class="mb-4 rounded-md w-full">
+      <h2 class="text-xl font-semibold text-red-400 mb-2">Nikon Coolpix 8700</h2>
+      <p>Kompakt, flexibel und immer mit dabei.</p>
+      <div class="specs">8 MP – ca. 999 €</div>
+    </div>
+
+    <div class="cardCustom">
+      <div class="year-bubble">2007</div>
+      <img src="https://tubox.de/TUBOX/server/uploads/2000/STAFF/Sony%20DSLR-A700.jpg" alt="Sony DSLR-A700" class="mb-4 rounded-md w-full">
+      <h2 class="text-xl font-semibold text-red-400 mb-2">Sony DSLR-A700</h2>
+      <p>Der erste Schritt in die DSLR-Welt mit tollen Ergebnissen.</p>
+      <div class="specs">12.2 MP – ca. 1.200 €</div>
+    </div>
+
+    <div class="cardCustom">
+      <div class="year-bubble">2010</div>
+      <img src="https://tubox.de/TUBOX/server/uploads/2000/STAFF/Sony%20NEX-3%20kit%2018-55.jpg" alt="Sony NEX-3 kit 18-55" class="mb-4 rounded-md w-full">
+      <h2 class="text-xl font-semibold text-red-400 mb-2">Sony NEX-5 kit 18-55</h2>
+      <p>Kompaktkamera mit erstaunlicher Qualität – perfekt für unterwegs.</p>
+      <div class="specs">14.2 MP – ca. 499 € (Kit)</div>
+    </div>
+
+    <div class="cardCustom">
+      <div class="year-bubble">2013</div>
+      <img src="https://tubox.de/TUBOX/server/uploads/2000/STAFF/sony-a7r%20iv.jpeg" alt="Sony A7R I" class="mb-4 rounded-md w-full">
+      <h2 class="text-xl font-semibold text-red-400 mb-2">Sony A7R I</h2>
+      <p>Vollformat & neue kreative Möglichkeiten – ein großer Sprung nach vorne.</p>
+      <div class="specs">36.4 MP – ca. 2.099 €</div>
+    </div>
+
+    <div class="cardCustom">
+      <div class="year-bubble">2019</div>
+      <img src="https://tubox.de/TUBOX/server/uploads/2000/STAFF/sony-a7r.jpg" alt="Sony A7R IV" class="mb-4 rounded-md w-full">
+      <h2 class="text-xl font-semibold text-red-400 mb-2">Sony A7R IV</h2>
+      <p>Meine aktuelle Kamera – gestochen scharfe Bilder und maximale Kontrolle.</p>
+      <div class="specs">61 MP – ca. 3.999 €</div>
+    </div>
+
+  </div>

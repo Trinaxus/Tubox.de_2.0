@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useGalleries } from '@/hooks/useGalleries';
 import { createGallery, uploadImages, updateGalleryMetadata, Gallery, deleteImage, deleteGallery } from '@/services/api';
 import { Button } from '@/components/ui/button';
@@ -9,10 +9,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { GalleryEditModal } from './GalleryEditModal';
+import { CategoryManager } from './CategoryManager';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { 
-  Grip,
   Sparkles,
   FolderPlus,
   Images,
@@ -32,25 +32,7 @@ import {
   Film
 } from 'lucide-react';
 
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import {
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+// Drag & Drop entfernt
 
 const categories = [
   'BEST OF TRINAX',
@@ -61,7 +43,7 @@ const categories = [
   'URLAUB'
 ];
 
-interface SortableGalleryRowProps {
+interface GalleryRowProps {
   gallery: Gallery;
   onEdit: (gallery: Gallery) => void;
   onDelete: (gallery: Gallery) => void;
@@ -71,21 +53,7 @@ interface SortableGalleryRowProps {
   onToggleExpand: () => void;
 }
 
-const SortableGalleryRow = ({ gallery, onEdit, onDelete, onUpload, onDeleteImage, isExpanded, onToggleExpand }: SortableGalleryRowProps) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: gallery.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
+const GalleryRow = ({ gallery, onEdit, onDelete, onUpload, onDeleteImage, isExpanded, onToggleExpand }: GalleryRowProps) => {
 
   const [hoveredImage, setHoveredImage] = useState<number | null>(null);
   const galleryImages = gallery.images || [];
@@ -118,22 +86,14 @@ const SortableGalleryRow = ({ gallery, onEdit, onDelete, onUpload, onDeleteImage
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="group relative">
+    <div className="group relative">
       <div className="bg-card border border-border/50 rounded-2xl overflow-hidden hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300">
         {/* Main Gallery Header */}
         <div 
           className="flex items-center gap-6 p-6 cursor-pointer hover:bg-muted/20 transition-colors"
           onClick={onToggleExpand}
         >
-          {/* Drag handle */}
-          <div 
-            {...attributes} 
-            {...listeners} 
-            className="cursor-grab hover:cursor-grabbing text-muted-foreground/50 group-hover:text-muted-foreground transition-colors p-2 hover:bg-primary/10 rounded-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Grip className="h-5 w-5" />
-          </div>
+          {/* Drag handle entfernt */}
           
           {/* Gallery Thumbnail */}
           <div className="relative">
@@ -188,17 +148,6 @@ const SortableGalleryRow = ({ gallery, onEdit, onDelete, onUpload, onDeleteImage
             
             {/* Action Buttons */}
             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onUpload(gallery.id);
-                }}
-                className="h-10 w-10 p-0 hover:bg-primary/10 hover:text-primary hover:scale-105 transition-all duration-200"
-              >
-                <Upload className="h-4 w-4" />
-              </Button>
               <Button
                 variant="ghost"
                 size="sm"
@@ -329,6 +278,9 @@ export const GalleryManager = () => {
   const [sortedGalleries, setSortedGalleries] = useState<Gallery[]>([]);
   const [expandedGalleries, setExpandedGalleries] = useState<Set<string>>(new Set());
   const [isNewGalleryOpen, setIsNewGalleryOpen] = useState(false);
+  // Collapsible category sections
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+  const [isCategoriesPanelOpen, setIsCategoriesPanelOpen] = useState(false);
   const [newGallery, setNewGallery] = useState({
     jahr: new Date().getFullYear().toString(),
     galerie: '',
@@ -366,12 +318,7 @@ export const GalleryManager = () => {
     }
   };
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
+  // Drag & Drop entfernt – keine Sensoren nötig
 
   // Update sorted galleries when galleries change
   useEffect(() => {
@@ -425,47 +372,28 @@ export const GalleryManager = () => {
     return null;
   };
 
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
+  // Drag & Drop Logik entfernt
 
-    if (over && active.id !== over.id) {
-      const oldIndex = sortedGalleries.findIndex((gallery) => gallery.id === active.id);
-      const newIndex = sortedGalleries.findIndex((gallery) => gallery.id === over.id);
-
-      const newSortedGalleries = arrayMove(sortedGalleries, oldIndex, newIndex);
-      setSortedGalleries(newSortedGalleries);
-      await saveGalleriesOrderToServer(newSortedGalleries);
+  // Gruppierung nach Kategorie (ähnlich BlogManager)
+  const groupedByCategory = useMemo(() => {
+    const map = new Map<string, Gallery[]>();
+    for (const g of sortedGalleries) {
+      const cat = (g.category || g.kategorie || 'Ohne Kategorie').toString().trim();
+      if (!map.has(cat)) map.set(cat, []);
+      map.get(cat)!.push(g);
     }
-  };
-
-  const saveGalleriesOrderToServer = async (galleries: Gallery[]) => {
-    const orderData = {
-      galleries: galleries.map((gallery, index) => ({
-        id: gallery.id,
-        year: gallery.year,
-        name: gallery.galerie || gallery.title,
-        order: index + 1,
-        pinned: gallery.id === '3000-Best-of-Trinax'
-      })),
-      lastUpdated: new Date().toISOString(),
-      version: "1.0"
-    };
-
-    try {
-      const response = await fetch('/api/save-galleries-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderData)
+    // innerhalb jeder Kategorie nach Datum (aus Name) absteigend sortieren, fallback Jahr/Name
+    for (const [, arr] of map) {
+      arr.sort((a, b) => {
+        const da = extractDateFromName(a.galerie || a.title || '');
+        const db = extractDateFromName(b.galerie || b.title || '');
+        if (da && db) return db.getTime() - da.getTime();
+        if (a.year && b.year) return (b.year as any) - (a.year as any);
+        return (b.galerie || b.title || '').localeCompare(a.galerie || a.title || '');
       });
-
-      if (response.ok) {
-        console.log('Galerie-Reihenfolge automatisch gespeichert');
-      }
-    } catch (error) {
-      console.log('Reihenfolge konnte nicht gespeichert werden, verwende lokale Speicherung');
-      localStorage.setItem('gallery-order', JSON.stringify(orderData));
     }
-  };
+    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [sortedGalleries]);
 
   const toggleGalleryExpansion = (galleryId: string) => {
     setExpandedGalleries(prev => {
@@ -798,6 +726,43 @@ export const GalleryManager = () => {
         )}
       </Card>
 
+      {/* Categories Panel (Collapsible) */}
+      <Card className="border-0 shadow-xl bg-gradient-to-br from-background to-muted/20">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-primary/10 rounded-xl">
+                <span className="text-primary">🏷️</span>
+              </div>
+              <div>
+                <CardTitle className="text-2xl bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                  Kategorien-Verwaltung
+                </CardTitle>
+                <CardDescription className="text-base mt-1">
+                  Erstellen und verwalten Sie Kategorien für Ihre Galerien
+                </CardDescription>
+              </div>
+            </div>
+            <Button 
+              size="sm"
+              variant="outline"
+              onClick={() => setIsCategoriesPanelOpen(prev => !prev)}
+              className="gap-2"
+            >
+              {isCategoriesPanelOpen ? 'Zuklappen' : 'Aufklappen'}
+              <ChevronDown className={`h-4 w-4 transition-transform ${isCategoriesPanelOpen ? 'rotate-180' : ''}`} />
+            </Button>
+          </div>
+        </CardHeader>
+        {isCategoriesPanelOpen && (
+          <CardContent className="pt-0">
+            <div className="bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 rounded-2xl p-6">
+              <CategoryManager scope="gallery" />
+            </div>
+          </CardContent>
+        )}
+      </Card>
+
       {/* Galleries List */}
       <Card className="border-0 shadow-xl bg-gradient-to-br from-background to-muted/20">
         <CardHeader className="pb-4">
@@ -807,7 +772,7 @@ export const GalleryManager = () => {
                 Alle Galerien ({sortedGalleries.length})
               </CardTitle>
               <CardDescription className="mt-1">
-                Automatisch sortiert nach Datum • Drag & Drop zum Anpassen der Reihenfolge
+                Automatisch sortiert nach Datum • gruppiert nach Kategorie
               </CardDescription>
             </div>
             {sortedGalleries.length > 0 && (
@@ -840,30 +805,40 @@ export const GalleryManager = () => {
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-              >
-                <SortableContext
-                  items={sortedGalleries.map(g => g.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  {sortedGalleries.map((gallery) => (
-                    <SortableGalleryRow
-                      key={gallery.id}
-                      gallery={gallery}
-                      onEdit={handleEditGallery}
-                      onDelete={handleDeleteGallery}
-                      onUpload={handleImageUpload}
-                      onDeleteImage={handleDeleteImage}
-                      isExpanded={expandedGalleries.has(gallery.id)}
-                      onToggleExpand={() => toggleGalleryExpansion(gallery.id)}
-                    />
-                  ))}
-                </SortableContext>
-              </DndContext>
+            <div className="space-y-8">
+              {groupedByCategory.map(([category, items]) => (
+                <div key={category} className="space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h4 className="text-lg font-semibold">{category}</h4>
+                    <Badge variant="secondary">{items.length}</Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setCollapsedCategories(prev => { const ns = new Set(prev); ns.has(category) ? ns.delete(category) : ns.add(category); return ns; })}
+                      className="ml-2 h-8 w-8 p-0"
+                      title="Kategorie ein-/ausklappen"
+                    >
+                      <ChevronDown className={`h-4 w-4 transition-transform ${collapsedCategories.has(category) ? '' : 'rotate-180'}`} />
+                    </Button>
+                  </div>
+                  {!collapsedCategories.has(category) && (
+                  <div className="space-y-4">
+                    {items.map((gallery) => (
+                      <GalleryRow
+                        key={gallery.id}
+                        gallery={gallery}
+                        onEdit={handleEditGallery}
+                        onDelete={handleDeleteGallery}
+                        onUpload={handleImageUpload}
+                        onDeleteImage={handleDeleteImage}
+                        isExpanded={expandedGalleries.has(gallery.id)}
+                        onToggleExpand={() => toggleGalleryExpansion(gallery.id)}
+                      />
+                    ))}
+                  </div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </CardContent>

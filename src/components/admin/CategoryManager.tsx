@@ -1,27 +1,31 @@
 import { useState, useEffect } from 'react';
+import { fetchBlogPosts, BlogPost, fetchGalleries, Gallery } from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, X, Save, RotateCcw, Grip, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useCategories } from '@/hooks/useCategories';
+import { useScopedCategories } from '@/hooks/useScopedCategories';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
-export const CategoryManager = () => {
+type CategoryScope = 'blog' | 'gallery';
+interface CategoryManagerProps { scope?: CategoryScope }
+
+export const CategoryManager = ({ scope = 'gallery' }: CategoryManagerProps) => {
   const { toast } = useToast();
-  const { categories, loading, error, saveCategories, refreshCategories } = useCategories();
+  const { categories, loading, error, saveCategories, refreshCategories } = useScopedCategories(scope);
   const [localCategories, setLocalCategories] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [previewNewCategories, setPreviewNewCategories] = useState<string[]>([]);
+  const [isImporting, setIsImporting] = useState(false);
 
-  // Initialize local categories when categories are loaded
+  // Keep local copy in sync with scoped categories
   useEffect(() => {
-    if (categories.length > 0 && localCategories.length === 0) {
-      setLocalCategories([...categories]);
-    }
-  }, [categories, localCategories.length]);
+    setLocalCategories([...(categories || [])]);
+  }, [categories]);
 
   const addCategory = () => {
     if (newCategory.trim() && !localCategories.includes(newCategory.trim().toUpperCase())) {
@@ -30,6 +34,41 @@ export const CategoryManager = () => {
       setNewCategory('');
       setHasChanges(true);
     }
+  };
+
+  const importFromSource = async () => {
+    try {
+      setIsImporting(true);
+      const derived = new Set<string>();
+      if (scope === 'blog') {
+        const posts: BlogPost[] = await fetchBlogPosts();
+        for (const p of posts) {
+          const raw = (p.category || '').toString().trim();
+          if (raw) derived.add(raw.toUpperCase());
+        }
+      } else {
+        const galleries: Gallery[] = await fetchGalleries();
+        for (const g of galleries) {
+          const raw = (g.category || (g as any).kategorie || '').toString().trim();
+          if (raw) derived.add(raw.toUpperCase());
+        }
+      }
+      // Filter only categories that are not already present locally
+      const fresh = Array.from(derived).filter(cat => !localCategories.includes(cat));
+      setPreviewNewCategories(fresh);
+    } catch (e) {
+      console.error('Konnte Kategorien aus Quelle nicht ableiten:', e);
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const applyImportedCategories = () => {
+    if (previewNewCategories.length === 0) return;
+    const merged = Array.from(new Set([...localCategories, ...previewNewCategories]));
+    setLocalCategories(merged);
+    setHasChanges(true);
+    setPreviewNewCategories([]);
   };
 
   const removeCategory = (categoryToRemove: string) => {
@@ -133,6 +172,40 @@ export const CategoryManager = () => {
                 Hinzufügen
               </Button>
             </div>
+          </div>
+
+          {/* Import categories from source */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-lg font-semibold text-foreground">Kategorien aus {scope === 'blog' ? 'Blog-Beiträgen' : 'Galerien'} übernehmen</Label>
+              <Button 
+                variant="outline"
+                size="sm"
+                onClick={importFromSource}
+                disabled={isImporting}
+                className="gap-2"
+              >
+                {isImporting ? 'Analysiere…' : 'Scannen'}
+              </Button>
+            </div>
+            {previewNewCategories.length > 0 ? (
+              <div className="rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5 p-4">
+                <div className="mb-2 text-sm text-muted-foreground">Folgende neue Kategorien wurden gefunden und sind noch nicht in Ihrer Liste:</div>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {previewNewCategories.map((cat) => (
+                    <span key={cat} className="px-2 py-1 text-xs rounded-md border border-border/60 bg-background/40">{cat}</span>
+                  ))}
+                </div>
+                <div className="flex gap-3">
+                  <Button onClick={applyImportedCategories} className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70">
+                    Übernehmen
+                  </Button>
+                  <Button variant="outline" onClick={() => setPreviewNewCategories([])}>Verwerfen</Button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground">Keine neuen Kategorien gefunden oder noch nicht gescannt.</div>
+            )}
           </div>
 
           {/* Current categories section */}
