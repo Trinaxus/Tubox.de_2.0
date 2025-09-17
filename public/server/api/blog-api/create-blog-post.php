@@ -16,17 +16,33 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 try {
-    // Get token from header
-    $headers = getallheaders();
-    $token = $headers['Authorization'] ?? '';
-    
-    if (empty($token) || $token !== 'Bearer your-admin-token') {
+    // Token from header or body
+    $headers = function_exists('getallheaders') ? getallheaders() : [];
+    $authHeader = $headers['Authorization'] ?? ($headers['authorization'] ?? '');
+    $bearerToken = '';
+    if (!empty($authHeader) && preg_match('/Bearer\s+(.*)$/i', $authHeader, $m)) {
+        $bearerToken = trim($m[1]);
+    }
+
+    // Parse JSON or take form fields
+    $raw = file_get_contents('php://input');
+    $json = json_decode($raw, true);
+    $input = is_array($json) ? $json : $_POST;
+
+    $bodyToken = $input['token'] ?? '';
+    $providedToken = !empty($bearerToken) ? $bearerToken : $bodyToken;
+
+    // Expected token
+    $expected = getenv('API_TOKEN');
+    if ($expected === false || $expected === null || $expected === '') {
+        $expected = '0000';
+    }
+
+    if (empty($providedToken) || $providedToken !== $expected) {
         http_response_code(401);
         echo json_encode(['success' => false, 'error' => 'Unauthorized']);
         exit();
     }
-    
-    $input = json_decode(file_get_contents('php://input'), true);
     
     if (!$input || !isset($input['title'])) {
         http_response_code(400);

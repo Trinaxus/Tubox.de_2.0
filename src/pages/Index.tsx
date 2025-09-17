@@ -60,7 +60,7 @@ const Index = () => {
     <div className="min-h-screen flex flex-col overflow-visible">
       <Header />
       
-      <main className="relative z-10 max-w-[1200px] mx-auto px-8 py-8 flex-1">
+      <main className="relative z-10 max-w-[1200px] mx-auto px-4 sm:px-6 md:px-8 py-6 md:py-8 flex-1">
         <Navigation 
           activeCategory={activeCategory}
           onCategoryChange={setActiveCategory}
@@ -92,7 +92,7 @@ const Index = () => {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 fade-grid">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6 lg:gap-8 fade-grid">
             {sortedGalleries.map((gallery, idx) => (
               <div key={gallery.id} className="fade-card" style={{ animationDelay: `${Math.min(idx, 10) * 40}ms` }}>
                 <GalleryCard

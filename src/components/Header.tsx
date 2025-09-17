@@ -1,8 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { Link, useLocation } from 'react-router-dom';
-import { Search, Sparkles, Shield, Home, Image, User } from 'lucide-react';
+import { Menu, Home, Image, User } from 'lucide-react';
 import logo from '@/assets/logo.png';
 import { useAuth } from '@/hooks/useAuth';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 export const Header = () => {
   const location = useLocation();
@@ -19,24 +20,24 @@ export const Header = () => {
       {/* Background Glow */}
       <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-background to-accent/5 pointer-events-none"></div>
       
-      <div className="relative max-w-[1400px] mx-auto flex items-center justify-between py-6 px-8">
+      <div className="relative max-w-[1400px] mx-auto flex items-center justify-between py-4 px-4 sm:px-6 md:py-6 md:px-8">
         {/* Logo */}
         <Link to="/" className="hover:opacity-80 transition-opacity duration-300">
           <img 
             src={logo} 
             alt="Dennis Lach Photography" 
-            className="h-12 w-auto"
+            className="h-10 w-auto md:h-12"
           />
         </Link>
         
-        {/* Navigation */}
-        <nav className="flex items-center gap-3">
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex items-center gap-3">
           {/* Home Button */}
           <Link to="/">
             <Button
               variant="ghost"
               size="lg"
-              className="font-medium tracking-wide"
+              className="font-medium tracking-wide h-10 px-5 rounded-2xl"
             >
               <span>PORTFOLIO</span>
             </Button>
@@ -47,7 +48,7 @@ export const Header = () => {
             <Button
               variant="ghost"
               size="lg"
-              className="font-medium tracking-wide"
+              className="font-medium tracking-wide h-10 px-5 rounded-2xl"
             >
               <span>BLOG</span>
             </Button>
@@ -58,12 +59,40 @@ export const Header = () => {
             <Button
               variant="ghost"
               size="lg"
-              className="font-medium tracking-wide"
+              className="font-medium tracking-wide h-10 px-5 rounded-2xl"
             >
               <span>ADMIN</span>
             </Button>
           </Link>
         </nav>
+
+        {/* Mobile Hamburger */}
+        <div className="md:hidden">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon" aria-label="Menü öffnen">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-80">
+              <div className="flex items-center gap-3 mb-6">
+                <img src={logo} alt="Logo" className="h-8 w-auto" />
+                <span className="text-sm text-muted-foreground">Navigation</span>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Link to="/">
+                  <Button variant="ghost" className="w-full justify-start text-base">Portfolio</Button>
+                </Link>
+                <Link to="/blog">
+                  <Button variant="ghost" className="w-full justify-start text-base">Blog</Button>
+                </Link>
+                <Link to="/admin">
+                  <Button variant="ghost" className="w-full justify-start text-base">Admin</Button>
+                </Link>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
       
       {/* Bottom Glow Line */}

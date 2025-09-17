@@ -1,5 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Info } from 'lucide-react';
+import { ImageInfoDialog } from '@/components/gallery/ImageInfoDialog';
 
 interface LightboxProps {
   images: string[];
@@ -20,7 +22,8 @@ export const Lightbox = ({
   onThumbnailClick,
   galleryTitle 
 }: LightboxProps) => {
-  
+  const [infoOpen, setInfoOpen] = useState(false);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       switch (e.key) {
@@ -50,7 +53,19 @@ export const Lightbox = ({
 
   const currentImage = images[currentIndex];
 
+  const originalImageUrl = useMemo(() => {
+    try {
+      const u = new URL(currentImage, window.location.href);
+      // If it's a preview URL, try to map to original
+      u.pathname = u.pathname.replace('/preview/', '/');
+      return u.toString();
+    } catch {
+      return currentImage.replace('/preview/', '/');
+    }
+  }, [currentImage]);
+
   return (
+    <>
     <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center">
       {/* Close button */}
       <Button
@@ -64,9 +79,20 @@ export const Lightbox = ({
         </svg>
       </Button>
 
-      {/* Image counter */}
-      <div className="absolute top-4 left-4 z-50 text-white bg-black/50 px-3 py-1 rounded">
-        {currentIndex + 1} / {images.length}
+      {/* Left controls: Info + counter */}
+      <div className="absolute top-4 left-4 z-50 flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-white hover:bg-white/20"
+          onClick={(e) => { e.stopPropagation(); setInfoOpen(true); }}
+          aria-label="Bild-Informationen"
+        >
+          <Info className="h-5 w-5" />
+        </Button>
+        <div className="text-white bg-black/50 px-3 py-1 rounded">
+          {currentIndex + 1} / {images.length}
+        </div>
       </div>
 
       {/* Gallery title */}
@@ -145,5 +171,13 @@ export const Lightbox = ({
         </div>
       )}
     </div>
+    {/* Metadata dialog */}
+    <ImageInfoDialog
+      open={infoOpen}
+      onOpenChange={setInfoOpen}
+      imageUrl={originalImageUrl}
+      title={galleryTitle}
+    />
+    </>
   );
-};
+}

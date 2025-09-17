@@ -1,7 +1,7 @@
 <?php
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: DELETE, OPTIONS');
+header('Access-Control-Allow-Methods: DELETE, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -9,24 +9,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-if ($_SERVER['REQUEST_METHOD'] !== 'DELETE') {
+if (!in_array($_SERVER['REQUEST_METHOD'], ['DELETE','POST'])) {
     http_response_code(405);
     echo json_encode(['success' => false, 'error' => 'Method not allowed']);
     exit();
 }
 
 try {
-    // Get token from header
-    $headers = getallheaders();
-    $token = $headers['Authorization'] ?? '';
-    
-    if (empty($token) || $token !== 'Bearer your-admin-token') {
+    // Token from header or param/body
+    $headers = function_exists('getallheaders') ? getallheaders() : [];
+    $authHeader = $headers['Authorization'] ?? ($headers['authorization'] ?? '');
+    $bearerToken = '';
+    if (!empty($authHeader) && preg_match('/Bearer\s+(.*)$/i', $authHeader, $m)) {
+        $bearerToken = trim($m[1]);
+    }
+
+    // Parse JSON body for POST or take superglobals
+    $raw = file_get_contents('php://input');
+    $json = json_decode($raw, true);
+    $input = is_array($json) ? $json : $_POST;
+
+    $bodyToken = $input['token'] ?? '';
+    $queryToken = $_GET['token'] ?? '';
+    $providedToken = $bearerToken ?: ($bodyToken ?: $queryToken);
+
+    $expected = getenv('API_TOKEN');
+    if ($expected === false || $expected === null || $expected === '') {
+        $expected = '0000';
+    }
+
+    if (empty($providedToken) || $providedToken !== $expected) {
         http_response_code(401);
         echo json_encode(['success' => false, 'error' => 'Unauthorized']);
         exit();
     }
     
-    $blogId = $_GET['id'] ?? '';
+    $blogId = $_GET['id'] ?? ($input['id'] ?? '');
     
     if (empty($blogId)) {
         http_response_code(400);

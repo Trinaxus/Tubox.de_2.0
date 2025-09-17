@@ -561,9 +561,9 @@ export const createBlogPost = async (postData: {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer your-admin-token'
+        'Authorization': `Bearer ${API_TOKEN}`
       },
-      body: JSON.stringify(postData)
+      body: JSON.stringify({ ...postData, token: API_TOKEN })
     });
     
     return response.ok;
@@ -574,20 +574,35 @@ export const createBlogPost = async (postData: {
 };
 
 export const updateBlogPost = async (slug: string, year: number, postData: Partial<BlogPost>): Promise<boolean> => {
+  const payload = {
+    ...postData,
+    id: postData.id || '',
+    year: postData.year || year,
+    token: API_TOKEN
+  };
   try {
-    const response = await fetch(`${BLOG_SERVER_BASE_URL}/update-blog-post.php`, {
+    // Attempt with PUT + Authorization header
+    let response = await fetch(`${BLOG_SERVER_BASE_URL}/update-blog-post.php`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${API_TOKEN}`
       },
-      body: JSON.stringify({
-        ...postData,
-        id: postData.id || '',
-        year: postData.year || year
-      })
+      body: JSON.stringify(payload)
     });
-    
+
+    // If unauthorized or method not allowed, retry with POST (some PHP handlers expect POST)
+    if (!response.ok && (response.status === 401 || response.status === 405)) {
+      response = await fetch(`${BLOG_SERVER_BASE_URL}/update-blog-post.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${API_TOKEN}`
+        },
+        body: JSON.stringify(payload)
+      });
+    }
+
     return response.ok;
   } catch (error) {
     console.error('Error updating blog post:', error);
@@ -597,10 +612,10 @@ export const updateBlogPost = async (slug: string, year: number, postData: Parti
 
 export const deleteBlogPost = async (id: string): Promise<boolean> => {
   try {
-    const response = await fetch(`${BLOG_SERVER_BASE_URL}/delete-blog-post.php?id=${encodeURIComponent(id)}`, {
+    const response = await fetch(`${BLOG_SERVER_BASE_URL}/delete-blog-post.php?id=${encodeURIComponent(id)}&token=${encodeURIComponent(API_TOKEN)}`, {
       method: 'DELETE',
       headers: {
-        'Authorization': 'Bearer your-admin-token'
+        'Authorization': `Bearer ${API_TOKEN}`
       }
     });
     
@@ -619,11 +634,12 @@ export const uploadBlogImage = async (slug: string, year: number, files: FileLis
       const formData = new FormData();
       formData.append('image', file);
       formData.append('blogId', slug);
+      formData.append('token', API_TOKEN);
       
       const response = await fetch(`${BLOG_SERVER_BASE_URL}/upload-blog-image.php`, {
         method: 'POST',
         headers: {
-          'Authorization': 'Bearer your-admin-token'
+          'Authorization': `Bearer ${API_TOKEN}`
         },
         body: formData,
         mode: 'cors'
