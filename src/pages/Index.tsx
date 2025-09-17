@@ -34,12 +34,40 @@ const Index = () => {
     ? accessFilteredGalleries 
     : accessFilteredGalleries.filter(gallery => gallery.category === activeCategory);
 
-  // Sort galleries by year (descending). If years are equal, use uploadDate as tiebreaker.
+  // Try to parse a date from the gallery title, e.g. "11.08.2025 - ..." or "2025-08-11 ..."
+  const parseDateFromText = (text?: string): number => {
+    if (!text) return 0;
+    // DD.MM.YYYY
+    let m = text.match(/\b(\d{1,2})\.(\d{1,2})\.(\d{4})\b/);
+    if (m) {
+      const [, d, mo, y] = m;
+      const dt = new Date(parseInt(y,10), parseInt(mo,10)-1, parseInt(d,10));
+      const t = dt.getTime();
+      return isNaN(t) ? 0 : t;
+    }
+    // YYYY-MM-DD or YYYY/MM/DD
+    m = text.match(/\b(\d{4})[-\/](\d{2})[-\/](\d{2})\b/);
+    if (m) {
+      const [, y, mo, d] = m;
+      const dt = new Date(parseInt(y,10), parseInt(mo,10)-1, parseInt(d,10));
+      const t = dt.getTime();
+      return isNaN(t) ? 0 : t;
+    }
+    return 0;
+  };
+
+  // Sort galleries by year (desc). If same year, use date parsed from title (desc). Fallback: uploadDate desc.
   const sortedGalleries = [...filteredGalleries].sort((a, b) => {
     const ya = parseInt((a.year || '0').toString(), 10);
     const yb = parseInt((b.year || '0').toString(), 10);
     if (yb !== ya) return yb - ya; // primary: year desc
-    // secondary: uploadDate desc if same year
+
+    // secondary: try to parse date from title/galerie
+    const ta = parseDateFromText(a.title || (a as any).galerie);
+    const tb = parseDateFromText(b.title || (b as any).galerie);
+    if (tb !== ta) return tb - ta; // newer first
+
+    // tertiary: uploadDate desc if same or no parsed title-date
     const da = a.uploadDate ? new Date(a.uploadDate).getTime() : 0;
     const db = b.uploadDate ? new Date(b.uploadDate).getTime() : 0;
     return db - da;
