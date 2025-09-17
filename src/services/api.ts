@@ -737,8 +737,9 @@ export const deleteGallery = async (year: string, gallery: string): Promise<bool
 // Category management functions
 export const fetchCategories = async (): Promise<string[]> => {
   try {
-    // Prefer server version first (with cache-buster)
-    const response = await fetch(`/categories.json?_=${Date.now()}`, { cache: 'no-store' });
+    // Prefer server version first (with cache-buster) from the gallery API server
+    const SERVER_BASE_URL = (import.meta as any).env?.VITE_SERVER_BASE_URL || 'https://tubox.de/TUBOX/server/api/gallery-api';
+    const response = await fetch(`${SERVER_BASE_URL}/categories.json?_=${Date.now()}`, { cache: 'no-store', mode: 'cors' });
     if (response.ok) {
       const data = await response.json();
       const list = data.categories || [];

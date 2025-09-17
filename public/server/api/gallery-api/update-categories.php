@@ -2,76 +2,70 @@
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
+  http_response_code(204);
+  exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    echo json_encode(['success' => false, 'message' => 'Method not allowed']);
-    exit();
+$input = file_get_contents('php://input');
+$data = json_decode($input, true);
+if (!is_array($data)) {
+  http_response_code(400);
+  echo json_encode(['success' => false, 'message' => 'Invalid JSON']);
+  exit;
 }
+
+// Optional token protection
+$expectedToken = getenv('API_TOKEN');
+if ($expectedToken && (!isset($data['token']) || $data['token'] !== $expectedToken)) {
+  http_response_code(401);
+  echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+  exit;
+}
+
+$categories = isset($data['categories']) && is_array($data['categories']) ? array_values($data['categories']) : null;
+if (!$categories) {
+  http_response_code(400);
+  echo json_encode(['success' => false, 'message' => 'Missing categories']);
+  exit;
+}
+
+$payload = [
+  'categories' => $categories,
+  'lastUpdated' => isset($data['lastUpdated']) ? $data['lastUpdated'] : date('c'),
+  'version' => isset($data['version']) ? $data['version'] : '1.0'
+];
+
+$file = __DIR__ . '/categories.json';
 
 try {
-    $input = json_decode(file_get_contents('php://input'), true);
-    
-    if (!$input || !isset($input['categories'])) {
-        throw new Exception('Invalid input data');
+  $json = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+  if ($json === false) throw new Exception('JSON encode failed');
+
+  // Ensure directory exists and is writable
+  $dir = dirname($file);
+  if (!is_dir($dir)) {
+    if (!mkdir($dir, 0775, true)) {
+      throw new Exception('Failed to create directory: ' . $dir);
     }
-    
-    $categories = $input['categories'];
-    $lastUpdated = $input['lastUpdated'] ?? date('c');
-    $version = $input['version'] ?? '1.0';
-    
-    // Validate categories
-    if (!is_array($categories)) {
-        throw new Exception('Categories must be an array');
-    }
-    
-    // Clean and validate each category
-    $cleanCategories = [];
-    foreach ($categories as $category) {
-        $category = trim($category);
-        if (!empty($category)) {
-            $cleanCategories[] = $category;
-        }
-    }
-    
-    $data = [
-        'categories' => $cleanCategories,
-        'lastUpdated' => $lastUpdated,
-        'version' => $version
-    ];
-    
-    $categoriesFile = __DIR__ . '/../../public/categories.json';
-    
-    // Create backup of existing file
-    if (file_exists($categoriesFile)) {
-        $backupFile = $categoriesFile . '.backup.' . date('Y-m-d-H-i-s');
-        copy($categoriesFile, $backupFile);
-    }
-    
-    // Write new categories file
-    $result = file_put_contents($categoriesFile, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-    
-    if ($result === false) {
-        throw new Exception('Failed to write categories file');
-    }
-    
-    echo json_encode([
-        'success' => true,
-        'message' => 'Categories updated successfully',
-        'categories' => $cleanCategories
-    ]);
-    
+  }
+  if (!is_writable($dir)) {
+    // Try to adjust permissions (may fail on some hosts)
+    @chmod($dir, 0775);
+  }
+
+  $ok = @file_put_contents($file, $json);
+  if ($ok === false) {
+    throw new Exception('Failed to write categories file');
+  }
+  // Try to set readable perms
+  @chmod($file, 0664);
+
+  echo json_encode(['success' => true]);
 } catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode([
-        'success' => false,
-        'message' => $e->getMessage()
-    ]);
+  http_response_code(500);
+  echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
 ?>

@@ -48,6 +48,8 @@ export const AdminAppearanceSettings = () => {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const SERVER_BASE_URL = (import.meta as any).env?.VITE_SERVER_BASE_URL || 'https://tubox.de/TUBOX/server/api/gallery-api';
+  const [diagRunning, setDiagRunning] = useState(false);
+  const [diagMessage, setDiagMessage] = useState<string | null>(null);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -208,6 +210,49 @@ export const AdminAppearanceSettings = () => {
       <div className="pt-2 flex items-center gap-3">
         <Button type="submit" disabled={saving}>{saving ? 'Speichern…' : 'Speichern (Server)'}</Button>
         {message && <span className="text-sm text-muted-foreground">{message}</span>}
+      </div>
+
+      {/* Diagnose */}
+      <div className="mt-8 rounded-xl border p-4">
+        <div className="flex items-center justify-between mb-2">
+          <Label className="text-sm">Diagnose</Label>
+          <span className="text-xs text-muted-foreground">Server: {SERVER_BASE_URL}</span>
+        </div>
+        <p className="text-sm text-muted-foreground mb-3">Testet GET/POST zu den Orb-Endpunkten auf dem Server.</p>
+        <div className="flex items-center gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={diagRunning}
+            onClick={async () => {
+              setDiagRunning(true);
+              setDiagMessage(null);
+              try {
+                const API_TOKEN = (import.meta as any).env?.VITE_API_TOKEN || '';
+                // Test GET
+                const getResp = await fetch(`${SERVER_BASE_URL}/get-orb-settings.php?_=${Date.now()}`, { mode: 'cors' });
+                const getOk = getResp.ok;
+                // Test POST (send current settings)
+                const postResp = await fetch(`${SERVER_BASE_URL}/update-orb-settings.php`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  mode: 'cors',
+                  body: JSON.stringify({ settings, token: API_TOKEN })
+                });
+                const postText = await postResp.text();
+                const postOk = postResp.ok;
+                setDiagMessage(`GET ${getOk ? 'OK' : getResp.status} • POST ${postOk ? 'OK' : postResp.status} ${postText ? '• ' + postText.slice(0, 140) : ''}`);
+              } catch (e: any) {
+                setDiagMessage(`Fehler: ${e?.message || 'Unbekannt'}`);
+              } finally {
+                setDiagRunning(false);
+              }
+            }}
+          >
+            {diagRunning ? 'Teste…' : 'Verbindung testen'}
+          </Button>
+          {diagMessage && <span className="text-xs text-muted-foreground">{diagMessage}</span>}
+        </div>
       </div>
     </form>
   );
