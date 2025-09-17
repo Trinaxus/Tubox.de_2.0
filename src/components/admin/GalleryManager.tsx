@@ -87,7 +87,7 @@ const GalleryRow = ({ gallery, onEdit, onDelete, onUpload, onDeleteImage, isExpa
 
   return (
     <div className="group relative">
-      <div className="bg-card border border-border/50 rounded-2xl overflow-hidden hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300">
+      <div className="bg-card border border-border/50 rounded-2xl overflow-visible hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300">
         {/* Main Gallery Header */}
         <div 
           className="flex items-center gap-6 p-6 cursor-pointer hover:bg-muted/20 transition-colors"
@@ -228,7 +228,21 @@ const GalleryRow = ({ gallery, onEdit, onDelete, onUpload, onDeleteImage, isExpa
                 >
                   <div className="aspect-square rounded-xl overflow-hidden border-2 border-border hover:border-primary/50 transition-all duration-300 shadow-md hover:shadow-lg">
                     <img
-                      src={imageUrl}
+                      src={(function toPreview(url: string) {
+                        try {
+                          const u = new URL(url);
+                          const parts = u.pathname.split('/');
+                          const file = parts.pop() || '';
+                          // If already contains /preview/, keep it
+                          if (parts.includes('preview')) return url;
+                          parts.push('preview');
+                          parts.push(file);
+                          return `${u.origin}${parts.join('/')}${u.search}`;
+                        } catch {
+                          // Fallback string replacement if URL constructor fails
+                          return url.replace(/\/([^\/]+)$/,'/preview/$1');
+                        }
+                      })(imageUrl)}
                       alt={`Gallery image ${index + 1}`}
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                       onError={(e) => {
@@ -236,6 +250,37 @@ const GalleryRow = ({ gallery, onEdit, onDelete, onUpload, onDeleteImage, isExpa
                       }}
                     />
                   </div>
+                  {/* Hover Preview Popup */}
+                  {hoveredImage === index && (
+                    <div
+                      className="absolute z-[100] bottom-full mb-3 left-1/2 -translate-x-1/2 rounded-xl border border-border/60 bg-card/90 backdrop-blur-sm shadow-2xl p-2"
+                      onMouseEnter={() => setHoveredImage(index)}
+                      onMouseLeave={() => setHoveredImage(null)}
+                    >
+                      <div className="w-[380px] h-[380px] max-w-[50vw] max-h-[50vh]">
+                        <img
+                          src={(function toPreview(url: string) {
+                            try {
+                              const u = new URL(url);
+                              const parts = u.pathname.split('/');
+                              const file = parts.pop() || '';
+                              if (parts.includes('preview')) return url;
+                              parts.push('preview');
+                              parts.push(file);
+                              return `${u.origin}${parts.join('/')}${u.search}`;
+                            } catch {
+                              return url.replace(/\/([^\/]+)$/,'/preview/$1');
+                            }
+                          })(imageUrl)}
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-full object-contain"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
                   <Button
                     variant="ghost"
                     size="sm"

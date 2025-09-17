@@ -146,7 +146,7 @@ export const Lightbox = ({
 
       {/* Thumbnail strip (optional, for better UX) */}
       {images.length > 1 && (
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-50 flex gap-2 max-w-full overflow-x-auto px-4">
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-2 max-w-full overflow-x-auto overflow-y-hidden px-4 py-2">
           {images.map((img, index) => (
             <button
               key={index}
@@ -159,7 +159,19 @@ export const Lightbox = ({
               aria-label={`Bild ${index + 1} anzeigen`}
             >
               <img
-                src={img}
+                src={(function toPreview(url: string) {
+                  try {
+                    const u = new URL(url);
+                    const parts = u.pathname.split('/');
+                    const file = parts.pop() || '';
+                    if (parts.includes('preview')) return url;
+                    parts.push('preview');
+                    parts.push(file);
+                    return `${u.origin}${parts.join('/')}${u.search}`;
+                  } catch {
+                    return url.replace(/\/([^\/]+)$/,'/preview/$1');
+                  }
+                })(img)}
                 alt={`Thumbnail ${index + 1}`}
                 className="w-full h-full object-cover"
                 onError={(e) => {

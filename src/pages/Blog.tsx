@@ -140,7 +140,19 @@ const Blog = () => {
                 {post.featured_image && (
                   <div className="aspect-video w-full overflow-hidden">
                     <img
-                      src={post.featured_image}
+                      src={(function toPreview(url: string) {
+                        try {
+                          const u = new URL(url);
+                          const parts = u.pathname.split('/');
+                          const file = parts.pop() || '';
+                          if (parts.includes('preview')) return url;
+                          parts.push('preview');
+                          parts.push(file);
+                          return `${u.origin}${parts.join('/')}${u.search}`;
+                        } catch {
+                          return url.replace(/\/([^\/]+)$/,'/preview/$1');
+                        }
+                      })(post.featured_image)}
                       alt={post.title}
                       className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
                       onError={(e) => {
