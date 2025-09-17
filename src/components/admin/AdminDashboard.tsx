@@ -7,12 +7,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GalleryManager } from './GalleryManager';
 import { BlogManager } from './BlogManager';
 import { FolderManager } from './FolderManager';
+import { AdminAppearanceSettings } from './AdminAppearanceSettings';
 
 export const AdminDashboard = () => {
   const { user, logout } = useAuth();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-transparent">
       <header className="border-b border-border p-6">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div className="flex items-center gap-4">
@@ -35,7 +36,7 @@ export const AdminDashboard = () => {
 
       <main className="max-w-7xl mx-auto p-6">
         <Tabs defaultValue="galleries" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="galleries" className="flex items-center gap-2">
               <span className="text-primary">📁</span>
               Galerien
@@ -47,6 +48,10 @@ export const AdminDashboard = () => {
             <TabsTrigger value="folders" className="flex items-center gap-2">
               <span className="text-primary">🗂️</span>
               Ordnerverwaltung
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-2">
+              <span className="text-primary">⚙️</span>
+              Einstellungen
             </TabsTrigger>
           </TabsList>
 
@@ -60,6 +65,14 @@ export const AdminDashboard = () => {
 
           <TabsContent value="folders">
             <FolderManager />
+          </TabsContent>
+
+          <TabsContent value="settings">
+            <div className="max-w-7xl mx-auto">
+              <h2 className="text-xl font-semibold mb-4">Darstellung</h2>
+              <p className="text-sm text-muted-foreground mb-6">Hintergrund-Orb konfigurieren (URL, Größe, Geschwindigkeit, Transparenz, Blend, Sichtbarkeit).</p>
+              <AdminAppearanceSettings />
+            </div>
           </TabsContent>
         </Tabs>
       </main>

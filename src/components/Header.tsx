@@ -16,7 +16,7 @@ export const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border/50 shadow-xl">
+    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/50 shadow-xl">
       {/* Background Glow */}
       <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-background to-accent/5 pointer-events-none"></div>
       

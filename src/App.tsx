@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Suspense, lazy } from "react";
+import { OrbBackground } from "@/components/OrbBackground";
 
 const Index = lazy(() => import("./pages/Index"));
 const Gallery = lazy(() => import("./pages/Gallery"));
@@ -20,17 +21,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <div className="min-h-screen bg-background relative overflow-visible">
-        {/* Global rotating background image (fixed center, behind content) */}
-        <div className="pointer-events-none fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[5]">
-          <img
-            src="https://tubox.de/TUBOX/server/uploads/2000/TOOLS/twisted-fold-v5_1024x1024-1-1.png?v=2025-09-15%2021%3A24%3A51"
-            alt="Background"
-            className="opacity-35 w-[180vmax] h-[180vmax] aspect-square rounded-full object-contain origin-center animate-[spin_200s_linear_infinite] mix-blend-screen"
-          />
-        </div>
-
-        <div className="relative z-[10]">
-          <BrowserRouter>
+        <BrowserRouter>
+          <OrbBackground />
+          <div className="relative z-[10]">
             <Suspense fallback={null}>
               <Routes>
                 <Route path="/" element={<Index />} />
@@ -42,8 +35,8 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
-          </BrowserRouter>
-        </div>
+          </div>
+        </BrowserRouter>
       </div>
     </TooltipProvider>
   </QueryClientProvider>

@@ -737,23 +737,28 @@ export const deleteGallery = async (year: string, gallery: string): Promise<bool
 // Category management functions
 export const fetchCategories = async (): Promise<string[]> => {
   try {
-    // First try to get from localStorage (for recently updated categories)
-    const stored = localStorage.getItem('categories');
-    if (stored) {
-      const data = JSON.parse(stored);
-      return data.categories || [];
+    // Prefer server version first (with cache-buster)
+    const response = await fetch(`/categories.json?_=${Date.now()}`, { cache: 'no-store' });
+    if (response.ok) {
+      const data = await response.json();
+      const list = data.categories || [];
+      // Update local cache for offline use
+      try {
+        localStorage.setItem('categories', JSON.stringify({ categories: list, lastUpdated: new Date().toISOString(), version: '1.0' }));
+      } catch {}
+      return list;
     }
-
-    // Then try to fetch from server
-    const response = await fetch('/categories.json');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const data = await response.json();
-    return data.categories || [];
-  } catch (error) {
-    console.error('Error fetching categories:', error);
-    // Fallback to default categories
+    throw new Error(`HTTP error! status: ${response.status}`);
+  } catch (serverError) {
+    console.warn('Server categories fetch failed, trying localStorage:', serverError);
+    try {
+      const stored = localStorage.getItem('categories');
+      if (stored) {
+        const data = JSON.parse(stored);
+        return data.categories || [];
+      }
+    } catch {}
+    // Fallback to defaults
     return [
       'BEST OF TRINAX',
       'LOSTPLACES', 
@@ -777,22 +782,23 @@ export const updateCategories = async (categories: string[]): Promise<void> => {
       body: JSON.stringify({ 
         categories,
         lastUpdated: new Date().toISOString(),
-        version: '1.0'
+        version: '1.0',
+        token: API_TOKEN
       })
     });
 
-    // If external server fails, we'll update the local categories.json manually
     if (!response.ok) {
-      console.warn('External server update failed, updating locally');
-      
-      // Update the local categories.json file by creating a new version
+      try {
+        const errText = await response.text();
+        console.error('update-categories.php error:', response.status, response.statusText, errText);
+      } catch {}
+      // If server can't update, store in localStorage as fallback
+      console.warn('Server update failed, using localStorage fallback');
       const updatedData = {
         categories,
         lastUpdated: new Date().toISOString(),
         version: '1.0'
       };
-      
-      // Store in localStorage as fallback for immediate UI updates
       localStorage.setItem('categories', JSON.stringify(updatedData));
       return;
     }
@@ -801,6 +807,8 @@ export const updateCategories = async (categories: string[]): Promise<void> => {
     if (!result.success) {
       throw new Error(result.message || 'Failed to update categories');
     }
+    // On success, clear localStorage cache to avoid stale
+    try { localStorage.removeItem('categories'); } catch {}
   } catch (error) {
     console.warn('Category update failed, using localStorage fallback:', error);
     
