@@ -47,6 +47,7 @@ export const AdminAppearanceSettings = () => {
 
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const SERVER_BASE_URL = (import.meta as any).env?.VITE_SERVER_BASE_URL || 'https://tubox.de/TUBOX/server/api/gallery-api';
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,9 +55,10 @@ export const AdminAppearanceSettings = () => {
     setMessage(null);
     try {
       const API_TOKEN = (import.meta as any).env?.VITE_API_TOKEN || '';
-      const resp = await fetch('/server/api/gallery-api/update-orb-settings.php', {
+      const resp = await fetch(`${SERVER_BASE_URL}/update-orb-settings.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        mode: 'cors',
         body: JSON.stringify({ settings, token: API_TOKEN })
       });
       const data = await resp.json().catch(() => ({}));

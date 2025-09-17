@@ -65,12 +65,13 @@ function readSettings(): OrbSettings {
 export const OrbBackground = () => {
   const location = useLocation();
   const [settings, setSettings] = useState<OrbSettings>(() => readSettings());
+  const SERVER_BASE_URL = (import.meta as any).env?.VITE_SERVER_BASE_URL || 'https://tubox.de/TUBOX/server/api/gallery-api';
 
   useEffect(() => {
     // Load from server first, fallback to localStorage
     const load = async () => {
       try {
-        const resp = await fetch('/server/api/gallery-api/get-orb-settings.php', { cache: 'no-store' });
+        const resp = await fetch(`${SERVER_BASE_URL}/get-orb-settings.php?_=${Date.now()}`, { cache: 'no-store', mode: 'cors' });
         if (resp.ok) {
           const json = await resp.json();
           if (json && json.success && json.data) {
