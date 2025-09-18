@@ -19,7 +19,12 @@ const queryClient = new QueryClient();
 const AnalyticsTracker = () => {
   const location = useLocation();
   useEffect(() => {
-    trackPageview(location.pathname + location.search);
+    const p = location.pathname;
+    const isAdmin = p.startsWith('/admin');
+    const isPublic = p === '/' || p.startsWith('/gallery') || p.startsWith('/blog');
+    if (!isAdmin && isPublic) {
+      trackPageview(p + location.search);
+    }
   }, [location.pathname, location.search]);
   useEffect(() => {
     startHeartbeat();
