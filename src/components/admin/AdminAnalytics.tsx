@@ -18,6 +18,14 @@ type Stats = {
   utmCampaigns: { campaign: string; count: number }[];
 };
 
+type ServerDiag = {
+  paths: { logsDir: string; todayFile: string; activeFile: string };
+  exists: { logsDir: boolean; todayFile: boolean; activeFile: boolean };
+  writable: { logsDir: boolean };
+  today: { count: number; lastLines: string[] };
+  active: { count: number; uuids: string[] };
+};
+
 const BASE = (import.meta as any).env?.VITE_ANALYTICS_BASE_URL || 'https://tubox.de/TUBOX/server/api/analytics';
 
 export const AdminAnalytics = () => {
@@ -27,6 +35,7 @@ export const AdminAnalytics = () => {
   const [stats, setStats] = useState<Stats | null>(null);
   const [diagRunning, setDiagRunning] = useState(false);
   const [diagMessage, setDiagMessage] = useState<string | null>(null);
+  const [serverDiag, setServerDiag] = useState<ServerDiag | null>(null);
 
   // Helpers to render country name + flag
   const regionNames = typeof Intl !== 'undefined' && (Intl as any).DisplayNames
@@ -341,7 +350,7 @@ export const AdminAnalytics = () => {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   mode: 'cors',
-                  body: JSON.stringify({ type: 'event', ts: new Date().toISOString(), path: '/admin', referrer: '', ua: navigator.userAgent, lang: navigator.language, screen: `${window.screen.width}x${window.screen.height}`, dpr: window.devicePixelRatio || 1, uuid: 'diagnostic', tz: Intl.DateTimeFormat().resolvedOptions().timeZone, dnt: false, data: { test: true } })
+                  body: JSON.stringify({ type: 'event', ts: new Date().toISOString(), path: '/admin', uuid: 'diagnostic', ua: navigator.userAgent })
                 });
                 const postText = await postRes.text();
                 const postOk = postRes.ok;
@@ -355,8 +364,56 @@ export const AdminAnalytics = () => {
           >
             {diagRunning ? 'Teste…' : 'Verbindung testen'}
           </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={diagRunning}
+            onClick={async () => {
+              setDiagRunning(true);
+              setDiagMessage(null);
+              try {
+                const res = await fetch(`${BASE}/diagnose.php`, { cache: 'no-store', mode: 'cors' });
+                const j = await res.json();
+                if (!res.ok || !j.success) throw new Error(j.message || `HTTP ${res.status}`);
+                setServerDiag(j.data as ServerDiag);
+                setDiagMessage('Server Diagnose aktualisiert');
+              } catch (e:any) {
+                setDiagMessage(`Fehler: ${e?.message || 'Unbekannt'}`);
+              } finally {
+                setDiagRunning(false);
+              }
+            }}
+          >
+            Server Diagnose
+          </Button>
           {diagMessage && <span className="text-xs text-muted-foreground">{diagMessage}</span>}
         </div>
+        {serverDiag && (
+          <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+            <div className="space-y-1">
+              <div className="font-medium">Schreibrechte</div>
+              <div>logsDir: <span className={serverDiag.writable.logsDir ? 'text-emerald-500' : 'text-destructive'}>{String(serverDiag.writable.logsDir)}</span></div>
+              <div>todayFile: {String(serverDiag.exists.todayFile)}</div>
+              <div>activeFile: {String(serverDiag.exists.activeFile)}</div>
+            </div>
+            <div className="space-y-1">
+              <div className="font-medium">Heute</div>
+              <div>Events: {serverDiag.today.count}</div>
+              <div className="max-h-24 overflow-auto border rounded p-2 bg-muted/40">
+                {serverDiag.today.lastLines?.length ? serverDiag.today.lastLines.map((l, i) => (
+                  <div key={i} className="truncate" title={l}>{l}</div>
+                )) : '—'}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <div className="font-medium">Online</div>
+              <div>Aktiv (5min): <span className={serverDiag.active.count > 0 ? 'text-emerald-500' : 'text-muted-foreground'}>{serverDiag.active.count}</span></div>
+              <div className="truncate" title={(serverDiag.active.uuids||[]).join(', ')}>
+                UUIDs: {(serverDiag.active.uuids||[]).slice(0,3).join(', ') || '—'}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

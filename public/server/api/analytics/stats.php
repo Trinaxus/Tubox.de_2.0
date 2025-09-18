@@ -64,9 +64,12 @@ if (is_dir($dir)) {
     while (($line = fgets($fh)) !== false) {
       $j = json_decode($line, true);
       if (!is_array($j)) continue;
-      $result['kpis']['pageviews']++;
+      // Always increase timeseries per-day bucket for any event type so days with data are visible
       $dateKey = substr($j['ts'] ?? $day->format('Y-m-d'), 0, 10);
       if (isset($byDay[$dateKey])) $byDay[$dateKey]++;
+      // Only aggregate metrics/KPIs for pageviews
+      if (($j['type'] ?? '') !== 'pageview') continue;
+      $result['kpis']['pageviews']++;
       // visitors by uuid (anonym)
       if (!empty($j['uuid'])) $visitors[$j['uuid']] = true;
       // paths

@@ -29,13 +29,28 @@ const getBase = (): string => {
 const getUUID = (): string => {
   try {
     const k = 'anon_uuid';
-    const ex = localStorage.getItem(k);
-    if (ex) return ex;
-    const id = crypto?.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+    const existing = localStorage.getItem(k);
+    if (existing) return existing;
+    const id = crypto?.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36);
     localStorage.setItem(k, id);
     return id;
   } catch {
     return '';
+  }
+};
+
+// Heartbeat session fallback UUID (if localStorage is blocked, use sessionStorage)
+const getSessionHeartbeatUUID = (): string => {
+  try {
+    const k = 'hb_uuid';
+    const existing = sessionStorage.getItem(k);
+    if (existing) return existing;
+    const id = (crypto?.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36)) + '-hb';
+    sessionStorage.setItem(k, id);
+    return id;
+  } catch {
+    // last resort ephemeral id
+    return 'ephem-' + Math.random().toString(36).slice(2);
   }
 };
 
@@ -111,8 +126,7 @@ export const trackPageview = (path: string) => {
       }
     } catch {}
     const payload = commonPayload({ type: 'pageview', path, referrer: ref, data: { entry } });
-    // Respect DNT: server also checks, but short-circuit client if desired
-    if (payload.dnt) return;
+    // Do not short-circuit on DNT here; server will decide based on config
     sendEvent(payload);
   } catch {}
 };
@@ -125,6 +139,9 @@ export const startHeartbeat = () => {
       const hb = commonPayload({ type: 'heartbeat' });
       // Heartbeat ist anonym und dient nur der Live-Anzeige -> auch bei DNT senden
       hb.dnt = false;
+      if (!hb.uuid) {
+        hb.uuid = getSessionHeartbeatUUID();
+      }
       sendEvent(hb);
     };
     send();

@@ -17,8 +17,16 @@ if (!is_array($payload)) {
   exit;
 }
 
-// Respect DoNotTrack if provided
-if (isset($payload['dnt']) && $payload['dnt']) {
+// Config: respect DNT or not
+$cfg = [];
+$cfgFile = __DIR__ . '/config.php';
+if (file_exists($cfgFile)) {
+  $cfg = include $cfgFile;
+}
+$respectDNT = isset($cfg['respectDNT']) ? (bool)$cfg['respectDNT'] : true;
+
+// Respect DoNotTrack if configured
+if ($respectDNT && isset($payload['dnt']) && $payload['dnt']) {
   echo json_encode(['success' => true, 'skipped' => true]);
   exit;
 }
