@@ -35,6 +35,8 @@ $evt = [
   'dpr' => $payload['dpr'] ?? 1,
   'uuid' => $payload['uuid'] ?? null,
   'tz' => $payload['tz'] ?? null,
+  'device' => $payload['device'] ?? null,
+  'utm' => isset($payload['utm']) && is_array($payload['utm']) ? $payload['utm'] : null,
 ];
 
 // IP anonymization
@@ -64,6 +66,24 @@ try {
   }
 } catch (Exception $e) {}
 $evt['country'] = $country;
+
+// Heartbeat handling for "online now"
+if (($evt['type'] ?? '') === 'heartbeat' && !empty($evt['uuid'])) {
+  $activeFile = __DIR__ . '/active.json';
+  $active = [];
+  if (file_exists($activeFile)) {
+    $raw = @file_get_contents($activeFile);
+    if ($raw !== false) {
+      $decoded = json_decode($raw, true);
+      if (is_array($decoded)) $active = $decoded;
+    }
+  }
+  $active[$evt['uuid']] = time();
+  @file_put_contents($activeFile, json_encode($active, JSON_UNESCAPED_SLASHES));
+  @chmod($activeFile, 0664);
+  echo json_encode(['success' => true]);
+  exit;
+}
 
 // Store as JSON line per day
 $dir = __DIR__ . '/logs';

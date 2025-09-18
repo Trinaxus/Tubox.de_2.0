@@ -1,5 +1,5 @@
 export type AnalyticsEvent = {
-  type: 'pageview' | 'event';
+  type: 'pageview' | 'event' | 'heartbeat';
   path?: string;
   referrer?: string;
   ts?: string;
@@ -11,6 +11,14 @@ export type AnalyticsEvent = {
   tz?: string | null;
   dnt?: boolean;
   data?: Record<string, any>;
+  device?: 'mobile' | 'tablet' | 'desktop' | 'other';
+  utm?: {
+    source?: string;
+    medium?: string;
+    campaign?: string;
+    term?: string;
+    content?: string;
+  };
 };
 
 const getBase = (): string => {
@@ -34,16 +42,37 @@ const getUUID = (): string => {
 const commonPayload = (overrides: Partial<AnalyticsEvent> = {}): AnalyticsEvent => {
   const nav: any = typeof navigator !== 'undefined' ? navigator : {};
   const scr: any = typeof window !== 'undefined' ? window.screen : {};
+  const uaStr: string = nav.userAgent || '';
+  // Device detection (simple heuristic)
+  const isIpad = /iPad/.test(uaStr);
+  const isTablet = /Tablet|Android(?!.*Mobile)/.test(uaStr) || isIpad;
+  const isMobile = /Mobi|Android/.test(uaStr) && !isTablet;
+  const device: AnalyticsEvent['device'] = isMobile ? 'mobile' : (isTablet ? 'tablet' : (uaStr ? 'desktop' : 'other'));
+  // UTM capture
+  let utm: AnalyticsEvent['utm'] = undefined;
+  try {
+    const usp = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+    const source = usp.get('utm_source') || undefined;
+    const medium = usp.get('utm_medium') || undefined;
+    const campaign = usp.get('utm_campaign') || undefined;
+    const term = usp.get('utm_term') || undefined;
+    const content = usp.get('utm_content') || undefined;
+    if (source || medium || campaign || term || content) {
+      utm = { source, medium, campaign, term, content };
+    }
+  } catch {}
   return {
     type: 'pageview',
     ts: new Date().toISOString(),
-    ua: nav.userAgent || '',
+    ua: uaStr,
     lang: nav.language || '',
     screen: scr && scr.width && scr.height ? `${scr.width}x${scr.height}` : '',
     dpr: typeof window !== 'undefined' && (window as any).devicePixelRatio ? (window as any).devicePixelRatio : 1,
     uuid: getUUID(),
     tz: Intl?.DateTimeFormat?.().resolvedOptions?.().timeZone || null,
     dnt: nav.doNotTrack === '1' || nav.msDoNotTrack === '1' || (window as any).doNotTrack === '1',
+    device,
+    utm,
     ...overrides,
   };
 };
@@ -64,9 +93,33 @@ export const sendEvent = (evt: AnalyticsEvent) => {
 export const trackPageview = (path: string) => {
   try {
     const ref = typeof document !== 'undefined' ? (document.referrer || '') : '';
-    const payload = commonPayload({ type: 'pageview', path, referrer: ref });
+    // Entry detection: first pageview in this session
+    let entry = false;
+    try {
+      const key = 'pv_seen';
+      const seen = sessionStorage.getItem(key);
+      if (!seen) {
+        entry = true;
+        sessionStorage.setItem(key, '1');
+      }
+    } catch {}
+    const payload = commonPayload({ type: 'pageview', path, referrer: ref, data: { entry } });
     // Respect DNT: server also checks, but short-circuit client if desired
     if (payload.dnt) return;
     sendEvent(payload);
+  } catch {}
+};
+
+let heartbeatTimer: number | null = null;
+export const startHeartbeat = () => {
+  try {
+    if (heartbeatTimer !== null) return; // already running
+    const send = () => {
+      const hb = commonPayload({ type: 'heartbeat' });
+      if (hb.dnt) return;
+      sendEvent(hb);
+    };
+    send();
+    heartbeatTimer = (setInterval(send, 60_000) as unknown) as number;
   } catch {}
 };

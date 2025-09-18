@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { Suspense, lazy, useEffect } from "react";
 import { OrbBackground } from "@/components/OrbBackground";
-import { trackPageview } from "@/lib/analytics";
+import { trackPageview, startHeartbeat } from "@/lib/analytics";
 
 const Index = lazy(() => import("./pages/Index"));
 const Gallery = lazy(() => import("./pages/Gallery"));
@@ -21,6 +21,9 @@ const AnalyticsTracker = () => {
   useEffect(() => {
     trackPageview(location.pathname + location.search);
   }, [location.pathname, location.search]);
+  useEffect(() => {
+    startHeartbeat();
+  }, []);
   return null;
 };
 
