@@ -126,7 +126,8 @@ export const trackPageview = (path: string) => {
       }
     } catch {}
     const payload = commonPayload({ type: 'pageview', path, referrer: ref, data: { entry } });
-    // Do not short-circuit on DNT here; server will decide based on config
+    // Respect DNT: server also checks, but short-circuit client if desired
+    if (payload.dnt) return;
     sendEvent(payload);
   } catch {}
 };

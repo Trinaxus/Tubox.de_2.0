@@ -1,8 +1,16 @@
 <?php
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
+// Dynamic CORS: reflect Origin to support credentials
+$origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '*';
+if ($origin !== '*') {
+  header('Access-Control-Allow-Origin: ' . $origin);
+  header('Vary: Origin');
+  header('Access-Control-Allow-Credentials: true');
+} else {
+  header('Access-Control-Allow-Origin: *');
+}
 header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
   http_response_code(204);
@@ -17,16 +25,8 @@ if (!is_array($payload)) {
   exit;
 }
 
-// Config: respect DNT or not
-$cfg = [];
-$cfgFile = __DIR__ . '/config.php';
-if (file_exists($cfgFile)) {
-  $cfg = include $cfgFile;
-}
-$respectDNT = isset($cfg['respectDNT']) ? (bool)$cfg['respectDNT'] : true;
-
-// Respect DoNotTrack if configured
-if ($respectDNT && isset($payload['dnt']) && $payload['dnt']) {
+// Respect DoNotTrack if provided
+if (isset($payload['dnt']) && $payload['dnt']) {
   echo json_encode(['success' => true, 'skipped' => true]);
   exit;
 }
@@ -57,6 +57,45 @@ if (empty($evt['device'])) {
   $evt['device'] = $isMobile ? 'mobile' : ($isTablet ? 'tablet' : 'desktop');
 }
 
+// Early exit: skip admin pageviews entirely from logs
+if (($evt['type'] ?? '') === 'pageview' && isset($evt['path']) && strpos($evt['path'], '/admin') === 0) {
+  echo json_encode(['success' => true, 'skipped' => true]);
+  exit;
+}
+
+// Early bot filter: common crawler keywords
+$uaLC = strtolower($evt['ua'] ?? '');
+$isBot = preg_match('/bot|spider|crawler|httpclient|headless|uptime|monitor|seo|preview|facebookexternalhit|whatsapp|telegram|slack|discord|curl|wget/i', $uaLC) === 1;
+if ($isBot) {
+  echo json_encode(['success' => true, 'skipped' => true]);
+  exit;
+}
+
+// Heartbeat handling for "online now" (store under logs/ to ensure write perms)
+if (($evt['type'] ?? '') === 'heartbeat' && !empty($evt['uuid'])) {
+  $logDir = __DIR__ . '/logs';
+  if (!is_dir($logDir)) { @mkdir($logDir, 0775, true); }
+  $activeFile = $logDir . '/active.json';
+  $active = [];
+  if (file_exists($activeFile)) {
+    $raw = @file_get_contents($activeFile);
+    if ($raw !== false) {
+      $decoded = json_decode($raw, true);
+      if (is_array($decoded)) $active = $decoded;
+    }
+  }
+  // prune old entries (older than 5 minutes)
+  $now = time();
+  foreach ($active as $uid => $ts) {
+    if (!is_numeric($ts) || ($now - intval($ts)) > 300) unset($active[$uid]);
+  }
+  $active[$evt['uuid']] = $now;
+  @file_put_contents($activeFile, json_encode($active, JSON_UNESCAPED_SLASHES));
+  @chmod($activeFile, 0664);
+  echo json_encode(['success' => true]);
+  exit;
+}
+
 // IP anonymization
 $ip = $_SERVER['REMOTE_ADDR'] ?? '';
 if (strpos($ip, ':') !== false) {
@@ -75,7 +114,7 @@ $evt['ip'] = $ip_anon;
 $country = null;
 try {
   $ctx = stream_context_create(['http' => ['timeout' => 1.0]]);
-  $geo = @file_get_contents('http://ip-api.com/json/' . urlencode($ip) . '?fields=status,countryCode', false, $ctx);
+  $geo = @file_get_contents('https://ip-api.com/json/' . urlencode($ip) . '?fields=status,countryCode', false, $ctx);
   if ($geo !== false) {
     $gj = json_decode($geo, true);
     if (($gj['status'] ?? '') === 'success') {
@@ -84,26 +123,6 @@ try {
   }
 } catch (Exception $e) {}
 $evt['country'] = $country;
-
-// Heartbeat handling for "online now" (store under logs/ to ensure write perms)
-if (($evt['type'] ?? '') === 'heartbeat' && !empty($evt['uuid'])) {
-  $logDir = __DIR__ . '/logs';
-  if (!is_dir($logDir)) { @mkdir($logDir, 0775, true); }
-  $activeFile = $logDir . '/active.json';
-  $active = [];
-  if (file_exists($activeFile)) {
-    $raw = @file_get_contents($activeFile);
-    if ($raw !== false) {
-      $decoded = json_decode($raw, true);
-      if (is_array($decoded)) $active = $decoded;
-    }
-  }
-  $active[$evt['uuid']] = time();
-  @file_put_contents($activeFile, json_encode($active, JSON_UNESCAPED_SLASHES));
-  @chmod($activeFile, 0664);
-  echo json_encode(['success' => true]);
-  exit;
-}
 
 // Store as JSON line per day
 $dir = __DIR__ . '/logs';
