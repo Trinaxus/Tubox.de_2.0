@@ -8,6 +8,7 @@ import { GalleryManager } from './GalleryManager';
 import { BlogManager } from './BlogManager';
 import { FolderManager } from './FolderManager';
 import { AdminAppearanceSettings } from './AdminAppearanceSettings';
+import { AdminAnalytics } from './AdminAnalytics';
 
 export const AdminDashboard = () => {
   const { user, logout } = useAuth();
@@ -36,7 +37,7 @@ export const AdminDashboard = () => {
 
       <main className="max-w-7xl mx-auto p-6">
         <Tabs defaultValue="galleries" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="galleries" className="flex items-center gap-2">
               <span className="text-primary">📁</span>
               Galerien
@@ -52,6 +53,10 @@ export const AdminDashboard = () => {
             <TabsTrigger value="settings" className="flex items-center gap-2">
               <span className="text-primary">⚙️</span>
               Einstellungen
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <span className="text-primary">📈</span>
+              Analyse
             </TabsTrigger>
           </TabsList>
 
@@ -72,6 +77,12 @@ export const AdminDashboard = () => {
               <h2 className="text-xl font-semibold mb-4">Darstellung</h2>
               <p className="text-sm text-muted-foreground mb-6">Hintergrund-Orb konfigurieren (URL, Größe, Geschwindigkeit, Transparenz, Blend, Sichtbarkeit).</p>
               <AdminAppearanceSettings />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <div className="max-w-7xl mx-auto">
+              <AdminAnalytics />
             </div>
           </TabsContent>
         </Tabs>
