@@ -155,7 +155,7 @@ export const AdminAnalytics = () => {
         <CardContent>
           <div className="flex items-end gap-[6px] h-28">
             {stats?.timeseries.map((d, i) => (
-              <div key={d.date} className="relative group flex-1 min-w-[4px]">
+              <div key={d.date} className="relative group flex-1 min-w-[4px] h-full">
                 <div className="h-full w-full bg-muted rounded">
                   <div className="w-full bg-primary rounded-b" style={{ height: `${(d.pv / maxTS) * 100}%` }} />
                 </div>

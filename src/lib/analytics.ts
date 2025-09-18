@@ -43,10 +43,17 @@ const commonPayload = (overrides: Partial<AnalyticsEvent> = {}): AnalyticsEvent 
   const nav: any = typeof navigator !== 'undefined' ? navigator : {};
   const scr: any = typeof window !== 'undefined' ? window.screen : {};
   const uaStr: string = nav.userAgent || '';
-  // Device detection (simple heuristic)
-  const isIpad = /iPad/.test(uaStr);
+  // Device detection (enhanced): UA-CH, iPadOS on Safari (Macintosh + touch)
+  // UA Client Hints
+  // @ts-ignore
+  const uaData = (nav as any).userAgentData;
+  const chMobile = uaData && typeof uaData.mobile === 'boolean' ? uaData.mobile : undefined;
+  // iPadOS masquerades as Macintosh with touch
+  const isIpadOS = /Macintosh/.test(uaStr) && typeof (navigator as any).maxTouchPoints === 'number' && (navigator as any).maxTouchPoints > 1;
+  const isIpad = /iPad/.test(uaStr) || isIpadOS;
   const isTablet = /Tablet|Android(?!.*Mobile)/.test(uaStr) || isIpad;
-  const isMobile = /Mobi|Android/.test(uaStr) && !isTablet;
+  const isMobileByUA = /Mobi|Android/.test(uaStr) && !isTablet;
+  const isMobile = chMobile === true || (chMobile === undefined && isMobileByUA);
   const device: AnalyticsEvent['device'] = isMobile ? 'mobile' : (isTablet ? 'tablet' : (uaStr ? 'desktop' : 'other'));
   // UTM capture
   let utm: AnalyticsEvent['utm'] = undefined;
@@ -116,7 +123,8 @@ export const startHeartbeat = () => {
     if (heartbeatTimer !== null) return; // already running
     const send = () => {
       const hb = commonPayload({ type: 'heartbeat' });
-      if (hb.dnt) return;
+      // Heartbeat ist anonym und dient nur der Live-Anzeige -> auch bei DNT senden
+      hb.dnt = false;
       sendEvent(hb);
     };
     send();

@@ -115,8 +115,8 @@ arsort($utmSources); $result['utmSources'] = array_slice(array_map(function($k,$
 arsort($utmMediums); $result['utmMediums'] = array_slice(array_map(function($k,$v){return ['medium'=>$k,'count'=>$v];}, array_keys($utmMediums), array_values($utmMediums)),0,10);
 arsort($utmCampaigns); $result['utmCampaigns'] = array_slice(array_map(function($k,$v){return ['campaign'=>$k,'count'=>$v];}, array_keys($utmCampaigns), array_values($utmCampaigns)),0,10);
 
-// Online now: read active.json (heartbeats within last 5 minutes)
-$activeFile = __DIR__ . '/active.json';
+// Online now: read active.json (heartbeats within last 5 minutes) from logs/
+$activeFile = __DIR__ . '/logs/active.json';
 if (file_exists($activeFile)) {
   $raw = @file_get_contents($activeFile);
   if ($raw !== false) {

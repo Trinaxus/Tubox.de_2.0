@@ -39,6 +39,16 @@ $evt = [
   'utm' => isset($payload['utm']) && is_array($payload['utm']) ? $payload['utm'] : null,
 ];
 
+// Server-side device fallback from UA if not provided
+if (empty($evt['device'])) {
+  $ua = $evt['ua'] ?? '';
+  $isIpad = stripos($ua, 'iPad') !== false;
+  $isAndroidTablet = (stripos($ua, 'Android') !== false && stripos($ua, 'Mobile') === false);
+  $isTablet = $isIpad || $isAndroidTablet || stripos($ua, 'Tablet') !== false;
+  $isMobile = (stripos($ua, 'Mobi') !== false || stripos($ua, 'Android') !== false) && !$isTablet;
+  $evt['device'] = $isMobile ? 'mobile' : ($isTablet ? 'tablet' : 'desktop');
+}
+
 // IP anonymization
 $ip = $_SERVER['REMOTE_ADDR'] ?? '';
 if (strpos($ip, ':') !== false) {
@@ -67,9 +77,11 @@ try {
 } catch (Exception $e) {}
 $evt['country'] = $country;
 
-// Heartbeat handling for "online now"
+// Heartbeat handling for "online now" (store under logs/ to ensure write perms)
 if (($evt['type'] ?? '') === 'heartbeat' && !empty($evt['uuid'])) {
-  $activeFile = __DIR__ . '/active.json';
+  $logDir = __DIR__ . '/logs';
+  if (!is_dir($logDir)) { @mkdir($logDir, 0775, true); }
+  $activeFile = $logDir . '/active.json';
   $active = [];
   if (file_exists($activeFile)) {
     $raw = @file_get_contents($activeFile);
