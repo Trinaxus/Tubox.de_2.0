@@ -104,11 +104,13 @@ export const sendEvent = (evt: AnalyticsEvent) => {
     const url = `${getBase()}/collect.php`;
     const body = JSON.stringify(evt);
     if (navigator.sendBeacon) {
-      const blob = new Blob([body], { type: 'application/json' });
+      // Use text/plain to avoid CORS preflight for Beacon
+      const blob = new Blob([body], { type: 'text/plain;charset=UTF-8' });
       navigator.sendBeacon(url, blob);
       return;
     }
-    fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, mode: 'cors', body });
+    // Fallback: avoid preflight by omitting JSON headers and using no-cors
+    fetch(url, { method: 'POST', mode: 'no-cors', body, keepalive: true, cache: 'no-store' });
   } catch {}
 };
 

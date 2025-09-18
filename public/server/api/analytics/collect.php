@@ -1,16 +1,22 @@
 <?php
 header('Content-Type: application/json');
-// Dynamic CORS: reflect Origin to support credentials
-$origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '*';
-if ($origin !== '*') {
-  header('Access-Control-Allow-Origin: ' . $origin);
-  header('Vary: Origin');
-  header('Access-Control-Allow-Credentials: true');
-} else {
-  header('Access-Control-Allow-Origin: *');
-}
-header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+// Strict CORS: allow only known origins; avoid '*'
+$reqOrigin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '';
+$allowed = [
+  'https://tubox-de-2-0.vercel.app',
+  'https://tubox.de',
+  'https://www.tubox.de',
+];
+$origin = in_array($reqOrigin, $allowed, true) ? $reqOrigin : $allowed[0];
+// Force replace any default ACAO header set by server
+header('Access-Control-Allow-Origin: ' . $origin, true);
+header('Vary: Origin', true);
+header('Access-Control-Allow-Credentials: true', true);
+header('Access-Control-Allow-Methods: POST, OPTIONS', true);
+// Reflect requested headers to satisfy Chrome preflight (sec-ch-ua, etc.)
+$reqHdr = isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']) ? $_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS'] : '';
+header('Access-Control-Allow-Headers: ' . ($reqHdr ?: 'Content-Type, Authorization, X-Requested-With'), true);
+header('Access-Control-Max-Age: 600', true);
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
   http_response_code(204);
