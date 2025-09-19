@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 
 export interface Gallery {
   id: string;
@@ -22,9 +23,9 @@ export const GalleryCard = ({ gallery, onClick }: GalleryCardProps) => {
   const isPasswordProtected = gallery.accessType === 'password';
   
   return (
-    <div 
+    <Card
       onClick={onClick}
-      className="group cursor-pointer bg-card border border-border rounded-xl overflow-hidden hover:border-primary/50 transition-all duration-300 hover:shadow-lg"
+      className="fade-card bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80 transition-all duration-200 cursor-pointer group overflow-hidden"
     >
       <div className="aspect-video relative overflow-hidden">
         <img
@@ -103,6 +104,6 @@ export const GalleryCard = ({ gallery, onClick }: GalleryCardProps) => {
           ))}
         </div>
       </div>
-    </div>
+    </Card>
   );
 };

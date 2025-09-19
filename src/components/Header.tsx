@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, Home, Image, User } from 'lucide-react';
@@ -6,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 export const Header = () => {
+  const logoRef = useRef<HTMLImageElement | null>(null);
   const location = useLocation();
   const { isAuthenticated } = useAuth();
   
@@ -16,17 +18,43 @@ export const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/50 shadow-xl">
-      {/* Background Glow */}
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-background to-accent/5 pointer-events-none"></div>
+    <>
+    <header
+      className="fixed top-0 left-0 right-0 z-50 border-b border-border/100 bg-background/0 backdrop-blur-sm supports-[backdrop-filter]:bg-background/0 bg-clip-padding"
+      style={{ WebkitBackdropFilter: 'blur(6px)' }}
+    >
+      {/* Uniform dark overlay (50% black) */}
+      <div className="absolute inset-0 bg-black/60 pointer-events-none"></div>
       
       <div className="relative max-w-[1400px] mx-auto flex items-center justify-between py-4 px-4 sm:px-6 md:py-6 md:px-8">
         {/* Logo */}
-        <Link to="/" className="hover:opacity-80 transition-opacity duration-300">
+        <Link to="/" className="group select-none">
           <img 
+            ref={logoRef}
             src={logo} 
             alt="Dennis Lach Photography" 
-            className="h-10 w-auto md:h-12"
+            className="h-10 w-auto md:h-12 transform transition-transform duration-300 ease-out will-change-transform active:scale-95"
+            onMouseEnter={() => {
+              const el = logoRef.current; if (!el) return;
+              el.classList.remove('animate-flicker');
+              // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+              el.offsetWidth;
+              el.classList.add('animate-flicker');
+            }}
+            onClick={(e) => {
+              const el = logoRef.current; if (!el) return;
+              el.classList.remove('animate-pop2','animate-flash','animate-flicker');
+              // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+              el.offsetWidth; // reflow to restart
+              el.classList.add('animate-pop2','animate-flash','animate-flicker');
+            }}
+            onTouchStart={() => {
+              const el = logoRef.current; if (!el) return;
+              el.classList.remove('animate-pop2','animate-flash','animate-flicker');
+              // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+              el.offsetWidth;
+              el.classList.add('animate-pop2','animate-flash','animate-flicker');
+            }}
           />
         </Link>
         
@@ -98,5 +126,8 @@ export const Header = () => {
       {/* Bottom Glow Line */}
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent"></div>
     </header>
+    {/* Spacer to prevent content from sliding under the fixed header */}
+    <div className="h-16 md:h-24" aria-hidden="true" />
+    </>
   );
 };

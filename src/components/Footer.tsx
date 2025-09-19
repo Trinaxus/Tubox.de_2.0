@@ -9,6 +9,20 @@ export const Footer = () => {
       {/* Top gradient line */}
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
 
+      {/* Centered toggle button at hairline */}
+      <button
+        type="button"
+        aria-label={expanded ? 'Footer einklappen' : 'Footer ausklappen'}
+        onClick={() => setExpanded(v => !v)}
+        className="group absolute -top-4 left-1/2 -translate-x-1/2 z-10 inline-flex items-center justify-center p-1.5 text-muted-foreground hover:text-foreground transition-colors"
+      >
+        {expanded ? (
+          <ChevronDown className="h-6 w-6 animate-arrow-pulse" />
+        ) : (
+          <ChevronUp className="h-6 w-6 animate-arrow-pulse" />
+        )}
+      </button>
+
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 md:px-8">
         {/* Compact bar on desktop with toggle */}
         <div className="hidden md:flex items-center justify-center py-3">
@@ -39,8 +53,8 @@ export const Footer = () => {
           </div>
         </div>
 
-        {/* Link sections: always visible on mobile, collapsible on desktop */}
-        <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-8 text-sm justify-items-center overflow-hidden transition-[max-height,opacity] duration-300 ${expanded ? 'md:max-h-[800px] md:opacity-100' : 'md:max-h-0 md:opacity-0'} md:px-2`}>
+        {/* Link sections: collapsible on all breakpoints (mobile too) */}
+        <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-8 text-sm justify-items-center overflow-hidden transition-[max-height,opacity] duration-300 ${expanded ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0 pointer-events-none'} md:px-2`}>
           {/* Navigation */}
           <div className="space-y-3 w-full max-w-xs text-left">
             <div className="text-xs uppercase tracking-wider text-muted-foreground">Navigation</div>
@@ -77,8 +91,13 @@ export const Footer = () => {
           </div>
         </div>
 
-        {/* Bottom bar */}
-        <div className={`border-t border-border/50 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-muted-foreground ${expanded ? 'mt-8 pt-6 pb-6' : 'md:mt-0 md:pt-3 md:pb-6 mt-4 pt-4 pb-5'}`}>
+        {/* Bottom bar (collapsible on all breakpoints) */}
+        <div
+          className={`border-t border-border/50 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-muted-foreground overflow-hidden transition-[max-height,opacity,margin,padding] duration-300
+            ${expanded
+              ? 'mt-8 pt-6 pb-6 max-h-[200px] opacity-100'
+              : 'mt-0 pt-0 pb-0 max-h-0 opacity-0 pointer-events-none'}`}
+        >
           <div className="order-2 md:order-1"> {new Date().getFullYear()} Dennis Lach Photography • Alle Rechte vorbehalten</div>
           <div className="order-1 md:order-2 inline-flex items-center gap-3">
             <span className="h-2 w-2 rounded-full bg-primary/60" />

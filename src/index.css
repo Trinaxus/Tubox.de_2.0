@@ -2,6 +2,96 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom animations */
+@keyframes snap-pop {
+  0%   { transform: scale(1); }
+  /* Doink 1 */
+  28%  { transform: scale(1.18); }
+  42%  { transform: scale(0.92); }
+  /* Doink 2 */
+  58%  { transform: scale(1.10); }
+  70%  { transform: scale(0.96); }
+  /* Doink 3 */
+  84%  { transform: scale(1.04); }
+  92%  { transform: scale(0.99); }
+  100% { transform: scale(1.01); }
+}
+
+/* Utility class to trigger the pop animation */
+.animate-pop {
+  animation: snap-pop 700ms cubic-bezier(.2,.8,.15,1) both;
+  transform-origin: center;
+}
+
+/* Two-bounce variant for click feedback */
+@keyframes snap-pop-2 {
+  0%   { transform: scale(1); }
+  /* Doink 1 */
+  30%  { transform: scale(1.16); }
+  48%  { transform: scale(0.93); }
+  /* Doink 2 */
+  68%  { transform: scale(1.06); }
+  84%  { transform: scale(0.99); }
+  100% { transform: scale(1.01); }
+}
+
+.animate-pop2 {
+  animation: snap-pop-2 520ms cubic-bezier(.2,.8,.15,1) both;
+  transform-origin: center;
+}
+
+/* Brief white flash using CSS filter (works on transparent PNGs) */
+@keyframes flash-white {
+  0% { filter: none; }
+  45% { filter: invert(1) grayscale(1) saturate(0) brightness(2) contrast(1.05); }
+  60% { filter: invert(0.85) grayscale(1) saturate(0) brightness(1.6) contrast(1.02); }
+  100% { filter: none; }
+}
+
+.animate-flash {
+  animation: flash-white 220ms linear both;
+}
+
+/* Fast multi-pulse white flicker for hover */
+@keyframes flash-flicker {
+  0% { filter: none; }
+  20% { filter: invert(1) grayscale(1) saturate(0) brightness(2.1); }
+  40% { filter: none; }
+  60% { filter: invert(1) grayscale(1) saturate(0) brightness(1.9); }
+  80% { filter: none; }
+  100% { filter: none; }
+}
+
+.animate-flicker {
+  animation: flash-flicker 260ms linear both;
+}
+
+/* Footer toggle arrow pulse (scale + brief white flash) */
+@keyframes arrow-pulse {
+  0%   { transform: scale(1); filter: none; }
+  40%  { transform: scale(1.18); filter: invert(1) grayscale(1) saturate(0) brightness(1.9); }
+  70%  { transform: scale(0.98); filter: none; }
+  100% { transform: scale(1); filter: none; }
+}
+
+.animate-arrow-pulse {
+  animation: arrow-pulse 1.2s ease-in-out infinite;
+  transform-origin: center;
+}
+
+/* Pause arrow pulse while interacting */
+.group:hover .animate-arrow-pulse {
+  animation-play-state: paused;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-pop { animation: none; }
+  .animate-flash { animation: none; }
+  .animate-flicker { animation: none; }
+  .animate-arrow-pulse { animation: none; }
+}
+
 /* Lightweight fade-up animation for card grids */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(8px); }

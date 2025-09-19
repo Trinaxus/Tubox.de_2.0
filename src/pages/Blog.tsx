@@ -11,7 +11,7 @@ import { Calendar, User, ArrowRight } from 'lucide-react';
 const Blog = () => {
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState('ALLE');
+  const [activeCategory, setActiveCategory] = useState('MUSIC');
   const [blogCategories, setBlogCategories] = useState<string[]>(['ALLE']);
   const navigate = useNavigate();
 
