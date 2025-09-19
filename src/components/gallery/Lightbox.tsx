@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Info } from 'lucide-react';
 import { ImageInfoDialog } from '@/components/gallery/ImageInfoDialog';
@@ -23,6 +23,56 @@ export const Lightbox = ({
   galleryTitle 
 }: LightboxProps) => {
   const [infoOpen, setInfoOpen] = useState(false);
+  // Swipe/drag refs
+  const startX = useRef<number | null>(null);
+  const startY = useRef<number | null>(null);
+  const startT = useRef<number>(0);
+  const dragging = useRef<boolean>(false);
+  const didSwipe = useRef<boolean>(false);
+
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    // Only primary button/finger
+    if (e.button !== 0 && e.pointerType !== 'touch') return;
+    dragging.current = true;
+    didSwipe.current = false;
+    startX.current = e.clientX;
+    startY.current = e.clientY;
+    startT.current = performance.now();
+    // capture pointer to receive move/up outside element
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+  };
+
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragging.current || startX.current == null || startY.current == null) return;
+    const dx = e.clientX - startX.current;
+    const dy = e.clientY - startY.current;
+    // If mostly horizontal movement and over a small threshold, mark as swipe to avoid onClose
+    if (!didSwipe.current && Math.abs(dx) > 24 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      didSwipe.current = true;
+    }
+  };
+
+  const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragging.current || startX.current == null || startY.current == null) return;
+    const dx = e.clientX - startX.current;
+    const dy = e.clientY - startY.current;
+    const dt = Math.max(1, performance.now() - startT.current);
+    const vx = dx / dt; // px per ms
+    const horizontal = Math.abs(dx) > Math.abs(dy) * 1.2;
+    const passed = Math.abs(dx) > 50 || Math.abs(vx) > 0.35; // distance or velocity
+
+    if (horizontal && passed) {
+      if (dx < 0) onNext(); else onPrev();
+    } else if (!didSwipe.current) {
+      // treat as click-to-close if no swipe gesture was detected
+      onClose();
+    }
+
+    dragging.current = false;
+    didSwipe.current = false;
+    startX.current = null;
+    startY.current = null;
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -131,13 +181,20 @@ export const Lightbox = ({
       {/* Main image */}
       <div 
         className="flex items-center justify-center w-full h-full p-8"
-        onClick={onClose}
+        style={{ touchAction: 'pan-y' }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={() => { dragging.current = false; didSwipe.current = false; }}
       >
         <img
           src={currentImage}
           alt={`${galleryTitle} - Bild ${currentIndex + 1}`}
           className="max-w-full max-h-full object-contain"
-          onClick={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            // prevent inner image click from bubbling; wrapper decides to close or swipe
+            e.stopPropagation();
+          }}
           onError={(e) => {
             e.currentTarget.src = '/placeholder.svg';
           }}

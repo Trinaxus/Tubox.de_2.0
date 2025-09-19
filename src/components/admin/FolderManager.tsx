@@ -27,6 +27,10 @@ export const FolderManager = () => {
   const [error, setError] = useState<string | null>(null);
   const [mkOpen, setMkOpen] = useState(false);
   const [mkName, setMkName] = useState('');
+  const [selected, setSelected] = useState<FileItem | null>(null);
+  const [rnOpen, setRnOpen] = useState(false);
+  const [rnName, setRnName] = useState('');
+  const [delOpen, setDelOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const breadcrumb = useMemo(() => {
@@ -57,11 +61,61 @@ export const FolderManager = () => {
     }
   };
 
+  const onSelect = (it: FileItem) => {
+    setSelected(sel => (sel && sel.path === it.path ? null : it));
+  };
+
+  const openRename = () => {
+    if (!selected) return;
+    setRnName(selected.name);
+    setRnOpen(true);
+  };
+
+  const doRename = async () => {
+    if (!selected) return;
+    const newName = rnName.trim();
+    if (!newName || newName === selected.name) { setRnOpen(false); return; }
+    try {
+      const resp = await fetch(`${FILE_API_BASE}/rename.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: API_TOKEN ? `Bearer ${API_TOKEN}` : '' },
+        body: JSON.stringify({ path: selected.path, newName, token: API_TOKEN })
+      });
+      const j = await resp.json();
+      if (!resp.ok || !j.success) throw new Error(j.message || `HTTP ${resp.status}`);
+      toast({ title: 'Umbenannt', description: `${selected.name} → ${newName}` });
+      setRnOpen(false); setSelected(null);
+      list(path);
+    } catch (e: any) {
+      toast({ title: 'Fehler beim Umbenennen', description: e?.message || 'Bitte später erneut versuchen' });
+    }
+  };
+
+  const openDelete = () => { if (selected) setDelOpen(true); };
+  const doDelete = async () => {
+    if (!selected) return;
+    try {
+      const resp = await fetch(`${FILE_API_BASE}/delete.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: API_TOKEN ? `Bearer ${API_TOKEN}` : '' },
+        body: JSON.stringify({ path: selected.path, token: API_TOKEN })
+      });
+      const j = await resp.json();
+      if (!resp.ok || !j.success) throw new Error(j.message || `HTTP ${resp.status}`);
+      toast({ title: 'Gelöscht', description: `${selected.name}` });
+      setDelOpen(false); setSelected(null);
+      list(path);
+    } catch (e: any) {
+      toast({ title: 'Fehler beim Löschen', description: e?.message || 'Bitte später erneut versuchen' });
+    }
+  };
+
   useEffect(() => { list(path); /* initial */ }, []);
 
   const onEnterDir = (dir: FileItem) => {
     if (dir.type !== 'dir') return;
     list(dir.path);
+    setSelected(null);
   };
 
   const onUp = () => {
@@ -93,15 +147,26 @@ export const FolderManager = () => {
     const files = ev.target.files;
     if (!files || files.length === 0) return;
     try {
-      const fd = new FormData();
-      fd.append('path', path);
-      fd.append('token', API_TOKEN);
-      Array.from(files).forEach(f => fd.append('files[]', f, f.name));
-      const resp = await fetch(`${FILE_API_BASE}/upload.php`, { method: 'POST', body: fd, mode: 'cors' });
-      const j = await resp.json();
-      if (!resp.ok || !j.success) throw new Error(j.message || `HTTP ${resp.status}`);
-      const okCount = (j.data.uploaded || []).filter((x: any) => x.ok).length;
-      toast({ title: 'Upload', description: `${okCount} Datei(en) hochgeladen` });
+      let ok = 0;
+      const failures: string[] = [];
+      for (const f of Array.from(files)) {
+        const fd = new FormData();
+        fd.append('path', path);
+        fd.append('token', API_TOKEN);
+        fd.append('file', f, f.name);
+        const resp = await fetch(`${FILE_API_BASE}/upload.php`, { method: 'POST', body: fd, mode: 'cors', cache: 'no-store' });
+        let j: any = null;
+        try { j = await resp.json(); } catch {}
+        if (resp.ok && j?.success && Array.isArray(j.data?.uploaded)) {
+          const entry = j.data.uploaded[0];
+          if (entry?.ok) ok++; else failures.push(`${f.name}: ${entry?.message || 'Fehler'}`);
+        } else if (j?.message) {
+          failures.push(`${f.name}: ${j.message}`);
+        } else {
+          failures.push(`${f.name}: HTTP ${resp.status}`);
+        }
+      }
+      toast({ title: 'Upload', description: `${ok} von ${files.length} Datei(en) hochgeladen${failures.length?` – Fehler: ${failures.slice(0,2).join('; ')}${failures.length>2?' …':''}`:''}` });
       list(path);
     } catch (e: any) {
       toast({ title: 'Upload fehlgeschlagen', description: e?.message || 'Bitte später erneut versuchen' });
@@ -132,8 +197,50 @@ export const FolderManager = () => {
             <Button variant="outline" onClick={()=>list(path)} disabled={loading}><RefreshCw className="h-4 w-4 mr-2"/>Aktualisieren</Button>
             <Button variant="outline" onClick={()=>setMkOpen(true)}><Plus className="h-4 w-4 mr-2"/>Neuer Ordner</Button>
             <Button variant="outline" onClick={onUploadClick}><Upload className="h-4 w-4 mr-2"/>Datei hochladen</Button>
+            <Button variant="outline" onClick={openRename} disabled={!selected}><Pencil className="h-4 w-4 mr-2"/>Umbenennen</Button>
+            <Button variant="destructive" onClick={openDelete} disabled={!selected}><Trash2 className="h-4 w-4 mr-2"/>Löschen</Button>
             <input ref={fileInputRef} onChange={onFilesSelected} type="file" multiple className="hidden" />
           </div>
+
+          {/* Inline Aktionsleisten direkt unter der Toolbar */}
+          {mkOpen && (
+            <div className="mt-2 border rounded-lg p-3 bg-background">
+              <div className="flex items-end gap-2">
+                <div className="flex-1">
+                  <Label className="text-xs">Neuer Ordnername</Label>
+                  <Input value={mkName} onChange={e=>setMkName(e.target.value)} placeholder="z.B. 2025 / Neue Galerie" />
+                </div>
+                <Button onClick={createFolder} disabled={!mkName.trim()}>Anlegen</Button>
+                <Button variant="outline" onClick={()=>{setMkOpen(false); setMkName('');}}>Abbrechen</Button>
+              </div>
+            </div>
+          )}
+          {rnOpen && selected && (
+            <div className="mt-2 border rounded-lg p-3 bg-background">
+              <div className="flex items-end gap-2">
+                <div className="flex-1">
+                  <Label className="text-xs">Neuer Name</Label>
+                  <Input value={rnName} onChange={e=>setRnName(e.target.value)} />
+                </div>
+                <Button onClick={doRename} disabled={!rnName.trim()}>Speichern</Button>
+                <Button variant="outline" onClick={()=>{setRnOpen(false);}}>Abbrechen</Button>
+              </div>
+            </div>
+          )}
+          {delOpen && selected && (
+            <div className="mt-2 border rounded-lg p-3 bg-background">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <div className="font-medium">Wirklich löschen?</div>
+                  <div className="text-xs text-muted-foreground">{selected.type==='dir'?'Ordner':'Datei'}: {selected.name}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="destructive" onClick={doDelete}>Löschen</Button>
+                  <Button variant="outline" onClick={()=>setDelOpen(false)}>Abbrechen</Button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Breadcrumb */}
           <div className="text-sm flex flex-wrap items-center gap-2">
@@ -162,7 +269,11 @@ export const FolderManager = () => {
               </thead>
               <tbody>
                 {items.map((it) => (
-                  <tr key={it.path} className="border-t hover:bg-muted/30">
+                  <tr
+                    key={it.path}
+                    className={`border-t hover:bg-muted/30 cursor-pointer ${selected?.path===it.path ? 'bg-primary/10 outline outline-2 outline-primary/60' : ''}`}
+                    onClick={()=>onSelect(it)}
+                  >
                     <td className="px-3 py-2">
                       {it.type==='dir' ? (
                         <button className="flex items-center gap-2 hover:underline" onClick={()=>onEnterDir(it)}>
@@ -182,9 +293,9 @@ export const FolderManager = () => {
                             <Download className="h-4 w-4"/> Download
                           </a>
                         )}
-                        {/* Platzhalter für Rename/Move/Delete – folgt nach Backend */}
-                        <Button variant="ghost" size="icon" disabled><Pencil className="h-4 w-4"/></Button>
-                        <Button variant="ghost" size="icon" disabled><Trash2 className="h-4 w-4"/></Button>
+                        {/* Schnell-Aktionen je Zeile */}
+                        <Button variant="ghost" size="icon" onClick={()=>{ setSelected(it); openRename(); }}><Pencil className="h-4 w-4"/></Button>
+                        <Button variant="ghost" size="icon" onClick={()=>{ setSelected(it); openDelete(); }}><Trash2 className="h-4 w-4"/></Button>
                       </div>
                     </td>
                   </tr>
@@ -219,6 +330,34 @@ export const FolderManager = () => {
                 </div>
                 <Button onClick={createFolder} disabled={!mkName.trim()}>Anlegen</Button>
                 <Button variant="outline" onClick={()=>{setMkOpen(false); setMkName('');}}>Abbrechen</Button>
+              </div>
+            </div>
+          )}
+          {/* Umbenennen Dialog */}
+          {rnOpen && selected && (
+            <div className="border rounded-lg p-3 bg-background">
+              <div className="flex items-end gap-2">
+                <div className="flex-1">
+                  <Label className="text-xs">Neuer Name</Label>
+                  <Input value={rnName} onChange={e=>setRnName(e.target.value)} />
+                </div>
+                <Button onClick={doRename} disabled={!rnName.trim()}>Speichern</Button>
+                <Button variant="outline" onClick={()=>{setRnOpen(false);}}>Abbrechen</Button>
+              </div>
+            </div>
+          )}
+          {/* Löschen Bestätigung */}
+          {delOpen && selected && (
+            <div className="border rounded-lg p-3 bg-background">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <div className="font-medium">Wirklich löschen?</div>
+                  <div className="text-xs text-muted-foreground">{selected.type==='dir'?'Ordner':'Datei'}: {selected.name}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="destructive" onClick={doDelete}>Löschen</Button>
+                  <Button variant="outline" onClick={()=>setDelOpen(false)}>Abbrechen</Button>
+                </div>
               </div>
             </div>
           )}
