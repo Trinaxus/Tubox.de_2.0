@@ -16,7 +16,7 @@ type FileItem = {
   url?: string | null;
 };
 
-const FILE_API_BASE = (import.meta as any).env?.VITE_FILE_API_BASE_URL || 'https://tubox.de/TUBOX/server/api/file-api';
+const FILE_API_BASE: string | undefined = (import.meta as any).env?.VITE_FILE_API_BASE_URL;
 const API_TOKEN = (import.meta as any).env?.VITE_API_TOKEN || '';
 
 export const FolderManager = () => {
@@ -48,6 +48,7 @@ export const FolderManager = () => {
     setLoading(true);
     setError(null);
     try {
+      if (!FILE_API_BASE) { throw new Error('VITE_FILE_API_BASE_URL ist nicht gesetzt'); }
       const url = `${FILE_API_BASE}/list.php?path=${encodeURIComponent(p)}&_=${Date.now()}`;
       const resp = await fetch(url, { headers: { Authorization: API_TOKEN ? `Bearer ${API_TOKEN}` : '' }, cache: 'no-store', mode: 'cors' });
       const j = await resp.json();
@@ -127,6 +128,7 @@ export const FolderManager = () => {
   const createFolder = async () => {
     if (!mkName.trim()) return;
     try {
+      if (!FILE_API_BASE) throw new Error('VITE_FILE_API_BASE_URL ist nicht gesetzt');
       const resp = await fetch(`${FILE_API_BASE}/mkdir.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: API_TOKEN ? `Bearer ${API_TOKEN}` : '' },
@@ -147,6 +149,7 @@ export const FolderManager = () => {
     const files = ev.target.files;
     if (!files || files.length === 0) return;
     try {
+      if (!FILE_API_BASE) throw new Error('VITE_FILE_API_BASE_URL ist nicht gesetzt');
       let ok = 0;
       const failures: string[] = [];
       for (const f of Array.from(files)) {
