@@ -24,7 +24,7 @@ export const Header = () => {
       style={{ WebkitBackdropFilter: 'blur(6px)' }}
     >
       {/* Uniform dark overlay (50% black) */}
-      <div className="absolute inset-0 bg-black/60 pointer-events-none"></div>
+      <div className="absolute inset-0 bg-black/70 pointer-events-none"></div>
       
       <div className="relative max-w-[1400px] mx-auto flex items-center justify-between py-4 px-4 sm:px-6 md:py-6 md:px-8">
         {/* Logo */}

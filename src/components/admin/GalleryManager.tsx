@@ -581,7 +581,8 @@ export const GalleryManager = () => {
             description: `${files.length} Dateien werden hochgeladen...`
           });
 
-          const success = await uploadImages(gallery.folderPath, files);
+          const currentKategorie = (gallery.category || (gallery as any).kategorie || '').toString();
+          const success = await uploadImages(gallery.folderPath, files, currentKategorie);
           
           if (success) {
             toast({

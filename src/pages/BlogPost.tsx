@@ -54,7 +54,11 @@ const BlogPost = () => {
         <Header />
         <div className="max-w-[1200px] mx-auto px-8 py-16 text-center flex-1">
           <h1 className="text-2xl font-bold mb-4">Artikel nicht gefunden</h1>
-          <Button onClick={() => navigate('/blog')} className="inline-flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => navigate('/blog')}
+            className="inline-flex items-center gap-2 rounded-2xl px-3 border-2 border-transparent hover:border-primary hover:bg-primary/10 hover:text-primary hover:ring-2 hover:ring-primary/40 hover:ring-offset-0 transition-all"
+          >
             <ArrowLeft className="h-4 w-4" /> Zurück zum Blog
           </Button>
         </div>
@@ -68,7 +72,11 @@ const BlogPost = () => {
       <Header />
       <main className="max-w-[900px] mx-auto px-6 sm:px-8 py-10 flex-1">
         <div className="flex items-center gap-3 mb-6">
-          <Button variant="outline" onClick={() => navigate('/blog')} className="inline-flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => navigate('/blog')}
+            className="inline-flex items-center gap-2 rounded-2xl px-3 border-2 border-transparent hover:border-primary hover:bg-primary/10 hover:text-primary hover:ring-2 hover:ring-primary/40 hover:ring-offset-0 transition-all"
+          >
             <ArrowLeft className="h-4 w-4" />
             Zurück
           </Button>

@@ -14,7 +14,7 @@ export const Footer = () => {
         type="button"
         aria-label={expanded ? 'Footer einklappen' : 'Footer ausklappen'}
         onClick={() => setExpanded(v => !v)}
-        className="group absolute -top-4 left-1/2 -translate-x-1/2 z-10 inline-flex items-center justify-center p-1.5 text-muted-foreground hover:text-foreground transition-colors"
+        className="group md:hidden absolute -top-4 left-1/2 -translate-x-1/2 z-10 inline-flex items-center justify-center p-1.5 text-muted-foreground hover:text-foreground transition-colors"
       >
         {expanded ? (
           <ChevronDown className="h-6 w-6 animate-arrow-pulse" />

@@ -117,7 +117,8 @@ try {
     
     if ($yearChanged) {
         // Create new directory structure if it doesn't exist
-        $newYearPath = dirname($blogUploadsDir) . '/' . $newYear;
+        // Ensure posts are stored under blog-uploads/<year>, not server/<year>
+        $newYearPath = $blogUploadsDir . '/' . $newYear;
         if (!file_exists($newYearPath)) {
             mkdir($newYearPath, 0755, true);
         }

@@ -448,7 +448,7 @@ const transformBlogPost = (post: any): BlogPost => {
 };
 
 // Admin API functions
-export const uploadImages = async (galleryPath: string, files: FileList): Promise<boolean> => {
+export const uploadImages = async (galleryPath: string, files: FileList, currentKategorie?: string): Promise<boolean> => {
   try {
     // Parse galleryPath to get year and gallery name
     const [year, gallery] = galleryPath.split('/');
@@ -464,7 +464,8 @@ export const uploadImages = async (galleryPath: string, files: FileList): Promis
       formData.append('file', file);
       formData.append('year', year);
       formData.append('gallery', gallery);
-      formData.append('kategorie', 'Best of Trinax'); // Default category
+      // Preserve existing gallery category if provided; fallback to previous default
+      formData.append('kategorie', currentKategorie || 'Best of Trinax');
       formData.append('token', API_TOKEN); // Add token as form data
       
       const response = await fetch(`${SERVER_BASE_URL}/server-upload-new.php`, {

@@ -59,13 +59,50 @@ export const BlogManager = () => {
     loadBlogPosts();
   }, []);
 
+  // Helper: robust timestamp extraction similar to frontend Blog.tsx
+  const getPostTimestamp = (post: BlogPost): number => {
+    try {
+      // Try DD.MM.YYYY from title
+      const m = post.title?.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+      if (m) {
+        const [, d, mo, y] = m;
+        const ts = new Date(parseInt(y, 10), parseInt(mo, 10) - 1, parseInt(d, 10)).getTime();
+        if (!isNaN(ts)) return ts;
+      }
+      // Try YYYY-MM-DD from slug/title
+      const txt = `${post.slug || ''} ${post.title || ''}`;
+      const m2 = txt.match(/(\d{4})[-/](\d{2})[-/](\d{2})/);
+      if (m2) {
+        const [, y, mo, d] = m2;
+        const ts = new Date(parseInt(y, 10), parseInt(mo, 10) - 1, parseInt(d, 10)).getTime();
+        if (!isNaN(ts)) return ts;
+      }
+      // Fallback to normalized date
+      const ts = new Date(post.date as any).getTime();
+      return isNaN(ts) ? 0 : ts;
+    } catch {
+      return 0;
+    }
+  };
+
+  // Comparator: year desc, then timestamp desc, then title asc
+  const comparePosts = (a: BlogPost, b: BlogPost): number => {
+    const ya = a.year || new Date(a.date as any).getFullYear() || 0;
+    const yb = b.year || new Date(b.date as any).getFullYear() || 0;
+    if (yb !== ya) return yb - ya;
+    const ta = getPostTimestamp(a);
+    const tb = getPostTimestamp(b);
+    if (tb !== ta) return tb - ta;
+    return (a.title || '').localeCompare(b.title || '');
+  };
+
   const loadBlogPosts = async () => {
     try {
       setLoading(true);
       setError(null);
       const posts = await fetchBlogPosts();
-      // Sort posts by year in descending order (newest first)
-      const sortedPosts = [...posts].sort((a, b) => (b.year || 0) - (a.year || 0));
+      // Sort posts by year desc, then extracted date desc, then title asc
+      const sortedPosts = [...posts].sort(comparePosts);
       setBlogPosts(sortedPosts);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load blog posts');
@@ -104,7 +141,7 @@ export const BlogManager = () => {
         setIsNewPostOpen(false);
         // Reload and sort posts
         const posts = await fetchBlogPosts();
-        const sortedPosts = [...posts].sort((a, b) => (b.year || 0) - (a.year || 0));
+        const sortedPosts = [...posts].sort(comparePosts);
         setBlogPosts(sortedPosts);
       } else {
         toast({
@@ -153,7 +190,7 @@ export const BlogManager = () => {
           const updatedPosts = prevPosts.map(post => 
             post.id === updatedPost.id ? { ...post, ...updatedPost } : post
           );
-          return [...updatedPosts].sort((a, b) => (b.year || 0) - (a.year || 0));
+          return [...updatedPosts].sort(comparePosts);
         });
         
         setIsEditModalOpen(false);
@@ -230,8 +267,6 @@ export const BlogManager = () => {
     }
   };
 
-  
-
   const groupedByCategory = useMemo(() => {
     const map = new Map<string, BlogPost[]>();
     for (const p of blogPosts) {
@@ -240,7 +275,7 @@ export const BlogManager = () => {
       map.get(cat)!.push(p);
     }
     for (const [, arr] of map) {
-      arr.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      arr.sort(comparePosts);
     }
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   }, [blogPosts]);
