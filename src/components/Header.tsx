@@ -1,7 +1,7 @@
-import { useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, Home, Image, User } from 'lucide-react';
+import { Maximize2, Menu, Minimize2 } from 'lucide-react';
 import logo from '@/assets/logo.png';
 import { useAuth } from '@/hooks/useAuth';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -10,6 +10,27 @@ export const Header = () => {
   const logoRef = useRef<HTMLImageElement | null>(null);
   const location = useLocation();
   const { isAuthenticated } = useAuth();
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+
+  useEffect(() => {
+    const update = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    update();
+    document.addEventListener('fullscreenchange', update);
+    return () => document.removeEventListener('fullscreenchange', update);
+  }, []);
+
+  const toggleFullscreen = useCallback(async () => {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+        return;
+      }
+      if (!document.documentElement.requestFullscreen) return;
+      await document.documentElement.requestFullscreen();
+    } catch {
+      // ignore
+    }
+  }, []);
   
   const isActive = (path: string) => {
     if (path === '/' && location.pathname === '/') return true;
@@ -94,32 +115,50 @@ export const Header = () => {
           </Link>
         </nav>
 
-        {/* Mobile Hamburger */}
-        <div className="md:hidden">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="icon" aria-label="Menü öffnen">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-80">
-              <div className="flex items-center gap-3 mb-6">
-                <img src={logo} alt="Logo" className="h-8 w-auto" />
-                <span className="text-sm text-muted-foreground">Navigation</span>
-              </div>
-              <div className="flex flex-col gap-2">
-                <Link to="/">
-                  <Button variant="ghost" className="w-full justify-start text-base">Portfolio</Button>
-                </Link>
-                <Link to="/blog">
-                  <Button variant="ghost" className="w-full justify-start text-base">Blog</Button>
-                </Link>
-                <Link to="/admin">
-                  <Button variant="ghost" className="w-full justify-start text-base">Admin</Button>
-                </Link>
-              </div>
-            </SheetContent>
-          </Sheet>
+        {/* Right Controls */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            className="hidden lg:inline-flex h-9 w-9 rounded-xl"
+            aria-label={isFullscreen ? 'Fullscreen verlassen' : 'Fullscreen aktivieren'}
+            onClick={toggleFullscreen}
+            disabled={
+              typeof document === 'undefined'
+                ? true
+                : !document.documentElement?.requestFullscreen && !document.exitFullscreen
+            }
+          >
+            {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </Button>
+
+          {/* Mobile Hamburger */}
+          <div className="md:hidden">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon" aria-label="Menü öffnen">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-80">
+                <div className="flex items-center gap-3 mb-6">
+                  <img src={logo} alt="Logo" className="h-8 w-auto" />
+                  <span className="text-sm text-muted-foreground">Navigation</span>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Link to="/">
+                    <Button variant="ghost" className="w-full justify-start text-base">Portfolio</Button>
+                  </Link>
+                  <Link to="/blog">
+                    <Button variant="ghost" className="w-full justify-start text-base">Blog</Button>
+                  </Link>
+                  <Link to="/admin">
+                    <Button variant="ghost" className="w-full justify-start text-base">Admin</Button>
+                  </Link>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </div>
       
